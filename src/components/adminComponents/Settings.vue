@@ -212,7 +212,7 @@ export default {
                         <!-- Profile Image of the Account -->
                         <div class="d-flex justify-center items-center ga-5">
                             <v-avatar size="80">
-                                    <v-img src="https://lh3.googleusercontent.com/a/ACg8ocJwzlH7cWcj_4lLhQcdQFqW9fKMp05LlJqovsGYgZ45MhJM820=s96-c"></v-img>
+                                    <v-img :src='account.picture' class="bg-black"></v-img>
                             </v-avatar>
 
                             <!-- Details of the Account -->
