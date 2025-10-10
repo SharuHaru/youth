@@ -440,8 +440,6 @@ class Barangay extends Model
         return $members;
     }
 
-
-
     /**
      * Gets the Cluster that this Barangay belongs to.
      *
@@ -470,35 +468,6 @@ class Barangay extends Model
         require_once __DIR__ . '/SkOfficial.php';
         return SkOfficial::all($assoc, $assoc_basic, $this);
     }
-
-
-    /**
-     * Gets all Events that belong to this Barangay.
-     *
-     * @param bool $assoc
-     * @param bool $assoc_basic
-     * @return array
-     */
-    public function getEvents(bool $assoc = false, bool $assoc_basic = false): array
-    {
-        require_once __DIR__ . '/Event.php';
-        return Event::all($assoc, $assoc_basic, $this);
-    }
-
-
-    /**
-     * Gets all Projects that belong to this Barangay.
-     *
-     * @param bool $assoc
-     * @param bool $assoc_basic
-     * @return array
-     */
-    public function getProjects(bool $assoc = false, bool $assoc_basic = false): array
-    {
-        require_once __DIR__ . '/Project.php';
-        return Project::all($assoc, $assoc_basic, $this);
-    }
-
 
     /**
      * Gets all Announcements that belong to this Barangay.
