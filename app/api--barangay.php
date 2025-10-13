@@ -124,7 +124,7 @@ else if($action === 'barangay-dashboard') {
     returnSuccess([
         'SkOfficialCount' => $SKOfficialsCount = SkOfficial::getPositionCount( $_POST['barangaySlug']),
         'reportAchievement' => $BarangayAchievement = Achievement::getMonthlySummary($_POST['barangaySlug']),
-        'reportAnnouncement' => $barangayAnnouncement = Announcement::getMonthlySummary($_POST['barangaySlug'], 2025)
+        'reportAnnouncement' => $barangayAnnouncement = Announcement::getMonthlySummary($_POST['barangaySlug'])
     ]);
 }
 
