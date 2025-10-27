@@ -26,6 +26,7 @@ class AuthorizedAccount extends Model {
     protected $picture;
     protected $access_token;
     protected $refresh_token;
+    protected $token_expiry;
     protected $created_at;
     protected $updated_at;
 
@@ -58,6 +59,7 @@ class AuthorizedAccount extends Model {
     public function getPicture() { return $this->picture; }
     public function getAccessToken() { return $this->access_token; } // sensitive
     public function getRefreshToken() { return $this->refresh_token; } // sensitive
+    public function getTokenExpiry() { return $this->token_expiry; } // sensitive
     public function getCreatedAt() { return $this->created_at; }
     public function getUpdatedAt() { return $this->updated_at; }
 
@@ -71,6 +73,7 @@ class AuthorizedAccount extends Model {
     public function setPicture($picture) { $this->picture = $picture; }
     public function setAccessToken($access_token) { $this->access_token = $access_token; }
     public function setRefreshToken($refresh_token) { $this->refresh_token = $refresh_token; }
+    public function setTokenExpiry($token_expiry) { $this->token_expiry = $token_expiry; }
     public function setCreatedAt($created_at) { $this->created_at = $created_at; }
     public function setUpdatedAt($updated_at) { $this->updated_at = $updated_at; }
 
@@ -120,12 +123,12 @@ class AuthorizedAccount extends Model {
     {
         $stmt = $this->getConnection()->prepare("
             INSERT INTO `" . self::$table . "` 
-            (`barangay_id`, `provider`, `provider_user_id`, `email`, `name`, `picture`, `access_token`, `refresh_token`) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            (`barangay_id`, `provider`, `provider_user_id`, `email`, `name`, `picture`, `access_token`, `refresh_token`, `token_expiry`) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
 
         $stmt->bind_param(
-            "isssssss",
+            "issssssss",
             $this->barangay_id,
             $this->provider,
             $this->provider_user_id,
@@ -133,7 +136,8 @@ class AuthorizedAccount extends Model {
             $this->name,
             $this->picture,
             $this->access_token,
-            $this->refresh_token
+            $this->refresh_token,
+            $this->token_expiry
         );
 
         if ($stmt->execute()) {
@@ -155,12 +159,13 @@ class AuthorizedAccount extends Model {
                 `name` = ?, 
                 `picture` = ?, 
                 `access_token` = ?, 
-                `refresh_token` = ?
+                `refresh_token` = ?,
+                `token_expiry` = ?
             WHERE `id` = ?
         ");
 
         $stmt->bind_param(
-            "isssssssi",
+            "issssssssi",
             $this->barangay_id,
             $this->provider,
             $this->provider_user_id,
@@ -169,6 +174,7 @@ class AuthorizedAccount extends Model {
             $this->picture,
             $this->access_token,
             $this->refresh_token,
+            $this ->token_expiry,
             $this->id
         );
 

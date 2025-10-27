@@ -123,11 +123,11 @@ if ($action === 'process-google')
     print_r($data);
 
     // Extract user info
-    $googleId = $user->getId();
+    $facebookId = $user->getId();
     $email = $data['email'] ?? null;
 
     // 4. Find the Account in the Database
-    $accounts = AuthorizedAccount::findBy('provider_user_id', $googleId);
+    $accounts = AuthorizedAccount::findBy('provider_user_id', $facebookId);
 
     if(!$accounts) {
         returnError("This Google Account is not Authorized. Please contact the developer if you want to be authorized. Thank you :>", 400);
@@ -173,11 +173,14 @@ if ($action === 'process-google')
 // Authorization using Third Party Accounts (Facebook)
 else if ($action === 'process-facebook')
 {
+    $appId = $GLOBALS['client_id_facebook'];
+    $appSecret = $GLOBALS['client_secret_facebook'];
+
     // 1. Create a provider
     $provider = new League\OAuth2\Client\Provider\Facebook([
-    'clientId'     => $GLOBALS['client_id_facebook'],
-    'clientSecret' => $GLOBALS['client_secret_facebook'],
-    'graphApiVersion' => 'v23.0',
+    'clientId'     => $appId,
+    'clientSecret' => $appSecret,
+    'graphApiVersion' => 'v24.0',
     'redirectUri'  => 'http://localhost:5173/login',
     ]);
 
@@ -190,34 +193,63 @@ else if ($action === 'process-facebook')
         exit;
     }
 
-    // 3. Handle callback: exchange code for access token
-    $token = $provider->getAccessToken('authorization_code', [
+    // 3. Handle callback: exchange code for short lived access token
+    $shortLivedToken = $provider->getAccessToken('authorization_code', [
         'code' => $_POST['code']
     ]);
 
-    $user = $provider->getResourceOwner($token);
+    // 4. Exchange for long-lived token
+    $exchangeUrl = "https://graph.facebook.com/v24.0/oauth/access_token?" .
+    "grant_type=fb_exchange_token" .
+    "&client_id={$appId}" .
+    "&client_secret={$appSecret}" .
+    "&fb_exchange_token={$shortLivedToken}";
+
+    $response = file_get_contents($exchangeUrl);
+    $longLivedToken = json_decode($response, true);
+    
+    $expiryTokenUrl = "https://graph.facebook.com/v24.0/debug_token?" . "input_token={$longLivedToken['access_token']}&access_token={$appId}|{$appSecret}";
+    $expiryResponse = file_get_contents($expiryTokenUrl);
+    $expiry = json_decode($expiryResponse, true);
+    print_r(date('Y-m-d H:i:s' ,$expiry['data']['data_access_expires_at']));
+
+    // TEST 1: Get Pages
+    $accessToken = $longLivedToken['access_token'];
+    $pagesUrl = "https://graph.facebook.com/v24.0/me/accounts?access_token=$accessToken";
+    $pages = json_decode(file_get_contents($pagesUrl), true);;
+
+
+
+    $user = $provider->getResourceOwner($shortLivedToken);
     $data = $user->toArray();
 
     // Extract user info
-    $googleId = $user->getId();
+    $facebookId = $user->getId();
     $email = $data['email'] ?? null;
 
-    // 4. Find the Account in the Database
-    $accounts = AuthorizedAccount::findBy('provider_user_id', $googleId);
-    $barangay = $accounts->getBarangay();
+    // 5. Find the Account in the Database
+    $account = AuthorizedAccount::findBy('provider_user_id', $facebookId);
 
-    if(!$accounts) {
+    if(!$account) {
         returnError("This Facebook Account is not Authorized. Please contact the developer if you want to be authorized. Thank you :>", 400);
     }
 
-    // 5. Issue your own JWT/cookie
-    if($accounts) {
+    // Set the long-lived access token
+    $account->setAccessToken($accessToken);
+    $account->setTokenExpiry(date('Y-m-d H:i:s' ,$expiry['data']['data_access_expires_at']));
+    $account->update();
+    
+
+    $barangay = $account->getBarangay();
+
+    // 6. Issue your own JWT/cookie
+    if($account) {
         $date   = new DateTimeImmutable();
         $expire_at = $date->modify('+4 week')->getTimestamp();
         $request_data = [
             'iss'  => 'localhost.youth',                    // Issuer
             'exp'  => $expire_at,                           // Expire
-            'barangayId' => $accounts->getId(),
+            'barangayId' => $barangay->getId(),
             'barangayName' => $barangay->getName(),  
             'barangayUsername' => $barangay->getUsername()                  
         ];
