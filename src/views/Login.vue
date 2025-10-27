@@ -51,7 +51,7 @@ export default {
         success: (res) => {
           if (res.success) {
             console.log(res);
-            this.$store.commit("auth/setUser", res.data);
+            this.$store.commit("auth/setUser", res.data.barangay);
             const barangaySlug = res?.data?.barangay?.slug;
             if (barangaySlug) {
               this.$router.replace({ name: "admin-dashboard", params: { barangaySlug } });
@@ -155,10 +155,11 @@ export default {
     },
 
     loginWithFacebook() {
-      const clientId = "1984297012108998";
+      const clientId = "2642256836111553";
       const provider = "facebook";
       const redirectUri = "http://localhost:5173/login";
-      const scope = "public_profile";
+      const scope = "public_profile,pages_manage_posts,pages_show_list,business_management";
+
 
       const facebookAuthUrl = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&state=${provider}&response_type=code`;
       window.location.href = facebookAuthUrl;
