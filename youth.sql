@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 28, 2025 at 04:16 PM
+-- Generation Time: Oct 29, 2025 at 07:39 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -233,7 +233,7 @@ CREATE TABLE `authorized_accounts` (
 
 INSERT INTO `authorized_accounts` (`id`, `barangay_id`, `provider`, `provider_user_id`, `email`, `name`, `picture`, `access_token`, `refresh_token`, `token_expiry`, `created_at`, `updated_at`) VALUES
 (1, 1, 'google', '111974584167448821561', 'chatgpt4youth@gmail.com', 'Youth', 'https://lh3.googleusercontent.com/a/ACg8ocJkwM7_lMqhDwgYaoVtWP8DsooJwj6YBYWgLOK39C7NAQDA7nE=s96-c', '', '', NULL, '2025-09-18 08:45:21', '2025-10-09 02:57:02'),
-(3, 1, 'facebook', '122108195955031929', 'chatgpt4youth@gmail.com', 'Youthy Hubby', 'https://platform-lookaside.fbsbx.com/platform/profilepic/?asid=122105131749031929&height=200&width=200&ext=1762438450&hash=AT9Us56bcMgwSTKIFDyutLzC', 'EAAljHlwfLMEBP6A09oI5mv77ZAjIPP26DqSgHZC1Rhla0LErZAOi0VWK9YYOte9ksCjqQIZCdm6ZCxXAWYFb9bd6Pw9bjWHxTuHF56SYSO1BGWdHuSsosWFjMISPEcm64uUHp4gVKGQT41tL8wMZBQ0J2cISlUGRZA6SpGcE6GmovVEzrRW7h7Xa3BpLkN0vpQ9v6th3ZASdeQZCx', '', '2026-01-26 05:52:54', '2025-10-07 14:18:17', '2025-10-28 05:52:56');
+(3, 1, 'facebook', '122108195955031929', 'chatgpt4youth@gmail.com', 'Youthy Hubby', 'https://platform-lookaside.fbsbx.com/platform/profilepic/?asid=122105131749031929&height=200&width=200&ext=1762438450&hash=AT9Us56bcMgwSTKIFDyutLzC', 'EAAljHlwfLMEBPwjr3AmaKahQrpPH73puH7oVwjBYxiD1vpDupDka2AcoErD37BIyV22u0HGVpZAgr5PSAqQQ0DTXiH1ZCtJkm3z2xe70UbZACGDJl6qeDYYfvI1T8BRZAH3TwsQbh4Dp8CF5OPTBwc7cDP9SE3upzSOkO17Che7ZBKqNl3E7LeGvrImA4QwwieJeFhSRHSB6rZB6zy', '', '2026-01-27 06:37:45', '2025-10-07 14:18:17', '2025-10-29 06:37:49');
 
 -- --------------------------------------------------------
 
@@ -306,7 +306,7 @@ INSERT INTO `barangays` (`id`, `cluster_id`, `slug`, `name`, `img`, `sk_barangay
 CREATE TABLE `barangay_facebook_pages` (
   `id` int(11) NOT NULL,
   `barangay_id` int(11) NOT NULL,
-  `page_id` bigint(20) NOT NULL,
+  `page_id` text NOT NULL,
   `page_name` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
@@ -317,8 +317,8 @@ CREATE TABLE `barangay_facebook_pages` (
 --
 
 INSERT INTO `barangay_facebook_pages` (`id`, `barangay_id`, `page_id`, `page_name`, `created_at`, `updated_at`) VALUES
-(1, 1, 851109194751372, 'Youth Oriented Unified Transparency Hub Testing - Page', '2025-10-28 05:53:53', '2025-10-28 05:53:53'),
-(24, 2, 1234567890, 'Updated Page Name', '2025-10-28 06:50:15', '2025-10-28 06:58:09');
+(1, 1, '851109194751372', 'Youth Oriented Unified Transparency Hub Testing - Page', '2025-10-28 05:53:53', '2025-10-28 05:53:53'),
+(24, 2, '1234567890', 'Updated Page Name', '2025-10-28 06:50:15', '2025-10-28 06:58:09');
 
 -- --------------------------------------------------------
 

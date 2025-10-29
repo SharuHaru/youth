@@ -63,7 +63,7 @@ class BarangayFacebookPages extends Model
             (`barangay_id`, `page_id`, `page_name`)
             VALUES (?, ?, ?)
         ");
-        $stmt->bind_param("iis",
+        $stmt->bind_param("iss",
             $this->barangay_id,
             $this->page_id,
             $this->page_name,
@@ -87,7 +87,7 @@ class BarangayFacebookPages extends Model
             SET `barangay_id` = ?, `page_id` = ?, `page_name` = ?
             WHERE `id` = ?
         ");
-        $stmt->bind_param("iisi",
+        $stmt->bind_param("issi",
             $this->barangay_id,
             $this->page_id,
             $this->page_name,
