@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 29, 2025 at 07:39 AM
+-- Generation Time: Oct 29, 2025 at 08:51 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -233,7 +233,7 @@ CREATE TABLE `authorized_accounts` (
 
 INSERT INTO `authorized_accounts` (`id`, `barangay_id`, `provider`, `provider_user_id`, `email`, `name`, `picture`, `access_token`, `refresh_token`, `token_expiry`, `created_at`, `updated_at`) VALUES
 (1, 1, 'google', '111974584167448821561', 'chatgpt4youth@gmail.com', 'Youth', 'https://lh3.googleusercontent.com/a/ACg8ocJkwM7_lMqhDwgYaoVtWP8DsooJwj6YBYWgLOK39C7NAQDA7nE=s96-c', '', '', NULL, '2025-09-18 08:45:21', '2025-10-09 02:57:02'),
-(3, 1, 'facebook', '122108195955031929', 'chatgpt4youth@gmail.com', 'Youthy Hubby', 'https://platform-lookaside.fbsbx.com/platform/profilepic/?asid=122105131749031929&height=200&width=200&ext=1762438450&hash=AT9Us56bcMgwSTKIFDyutLzC', 'EAAljHlwfLMEBPwjr3AmaKahQrpPH73puH7oVwjBYxiD1vpDupDka2AcoErD37BIyV22u0HGVpZAgr5PSAqQQ0DTXiH1ZCtJkm3z2xe70UbZACGDJl6qeDYYfvI1T8BRZAH3TwsQbh4Dp8CF5OPTBwc7cDP9SE3upzSOkO17Che7ZBKqNl3E7LeGvrImA4QwwieJeFhSRHSB6rZB6zy', '', '2026-01-27 06:37:45', '2025-10-07 14:18:17', '2025-10-29 06:37:49');
+(3, 1, 'facebook', '122108195955031929', 'chatgpt4youth@gmail.com', 'Youthy Hubby', 'https://platform-lookaside.fbsbx.com/platform/profilepic/?asid=122105131749031929&height=200&width=200&ext=1762438450&hash=AT9Us56bcMgwSTKIFDyutLzC', 'EAAljHlwfLMEBP3w4S4h1jDegkEFnEQMZC7Asgi3bHXQO7NzcVr8aFGRdWE8vfPLzueQLWZAToqs9Ez9Mpd5bRvqDv2M0VRfmMoK4cbRp1C4FsA1uNr0SCrTzGjfN0pLYATKq4On93892YQC2ec9JnZAfvkC5Ki1AsfU8uaYcESdrUXd2A1aFL1cBBMeG1cGUn3rCJfTXSHzoCXO', '', '2026-01-27 07:43:50', '2025-10-07 14:18:17', '2025-10-29 07:43:56');
 
 -- --------------------------------------------------------
 
@@ -380,7 +380,6 @@ CREATE TABLE `facebook_page_tokens` (
   `authorized_account_id` int(11) NOT NULL,
   `barangay_facebook_page_id` int(11) NOT NULL,
   `page_access_token` text NOT NULL,
-  `token_expiry` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -389,9 +388,9 @@ CREATE TABLE `facebook_page_tokens` (
 -- Dumping data for table `facebook_page_tokens`
 --
 
-INSERT INTO `facebook_page_tokens` (`id`, `authorized_account_id`, `barangay_facebook_page_id`, `page_access_token`, `token_expiry`, `created_at`, `updated_at`) VALUES
-(1, 3, 1, 'EAAljHlwfLMEBP3QeQVBbLyYbU7yb3xOxqDESedvBZAIwg0dmzIQDzCKAehRWnTMysZC4jFvXbBeyXpsGeoXDvlGdf5r8GE5cbg3KPZCEq6EZA8AjV5oZAAvuaNQTZCQ9ebLhTGw21TuVtnGeYL0yaOBRY9fYrBTUuUrL2shZCNgZAZAZCNPf1wuQg2KsSpvK7b6y9kbbzZAbAkn4o90T9A1ezHo13ke', '2025-10-27 22:54:25', '2025-10-28 05:56:02', '2025-10-28 05:56:02'),
-(7, 1, 24, 'EAAGm0PX4ZCpsBAKZCZA...UPDATED', '2025-12-31 15:59:59', '2025-10-28 14:38:19', '2025-10-28 14:38:19');
+INSERT INTO `facebook_page_tokens` (`id`, `authorized_account_id`, `barangay_facebook_page_id`, `page_access_token`, `created_at`, `updated_at`) VALUES
+(1, 3, 1, 'EAAljHlwfLMEBP6H6Drm4sKiZBLljZCjVfjUQnB9pgPZBgMZCZBck8vDOzcGrPp5VkjMch3jKBkzdiHEVIYhLLU0jUyuZAKGZCyeiR3TgneumdWT0E79UV4RvAspRkxQjmZB67wrVnSZBpZCG32zvu5L9NHZARpmHGPcJHvr4GM7AsZCZA3X5ITgDqphRsG4wHrg1REJkoij6uNRMZBqBqAETlqjAJM', '2025-10-28 05:56:02', '2025-10-29 07:43:56'),
+(7, 1, 24, 'EAAGm0PX4ZCpsBAKZCZA...UPDATED', '2025-10-28 14:38:19', '2025-10-28 14:38:19');
 
 -- --------------------------------------------------------
 

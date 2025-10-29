@@ -5,13 +5,12 @@ class FacebookPageTokens extends Model
 {
     protected static $table = 'facebook_page_tokens';
     public    static $table_columns = [];
-    protected static $basic_columns = ['id', 'authorized_account_id', 'barangay_facebook_page_id', 'page_access_token', 'token_expiry'];
+    protected static $basic_columns = ['id', 'authorized_account_id', 'barangay_facebook_page_id', 'page_access_token'];
 
     /** properties */
     protected $authorized_account_id = 0;
     protected $barangay_facebook_page_id = 0;
     protected $page_access_token = '';
-    protected $token_expiry = '';
 
     /**
      * Constructor
@@ -37,13 +36,12 @@ class FacebookPageTokens extends Model
     public function getAuthorizedAccountId() { return $this->authorized_account_id; }
     public function getBarangayFacebookPageId() {return $this->barangay_facebook_page_id;}
     public function getPageAccessToken() {return $this->page_access_token;}
-    public function getTokenExpiry()    { return $this->token_expiry; }
+
 
     // -------------------- SETTERS --------------------
     public function setAuthorizedAccountId($authorized_account_id) { $this->authorized_account_id = $authorized_account_id; }
     public function setBarangayFacebookPageId($barangay_facebook_page_id) {$this->barangay_facebook_page_id = $barangay_facebook_page_id;}
     public function setPageAccessToken($page_access_token) { $this->page_access_token = $page_access_token; }
-    public function setTokenExpiry($token_expiry)    { $this->token_expiry = $token_expiry; }
 
 
 
@@ -57,14 +55,13 @@ class FacebookPageTokens extends Model
     {
         $stmt = $this->getConnection()->prepare("
             INSERT INTO `" . self::$table . "`
-            (`authorized_account_id`, `barangay_facebook_page_id`, `page_access_token`, `token_expiry`)
-            VALUES (?, ?, ?, ?)
+            (`authorized_account_id`, `barangay_facebook_page_id`, `page_access_token`)
+            VALUES (?, ?, ?)
         ");
-        $stmt->bind_param("iiss",
+        $stmt->bind_param("iis",
             $this->authorized_account_id,
             $this->barangay_facebook_page_id,
             $this->page_access_token,
-            $this->token_expiry
         );
         $stmt->execute();
 
@@ -82,14 +79,13 @@ class FacebookPageTokens extends Model
     {
         $stmt = $this->getConnection()->prepare("
             UPDATE `" . self::$table . "`
-            SET `authorized_account_id` = ?, `barangay_facebook_page_id` = ?, `page_access_token` = ?, `token_expiry` = ?
+            SET `authorized_account_id` = ?, `barangay_facebook_page_id` = ?, `page_access_token` = ?
             WHERE `id` = ?
         ");
-        $stmt->bind_param("iissi",
+        $stmt->bind_param("iisi",
             $this->authorized_account_id,
             $this->barangay_facebook_page_id,
             $this->page_access_token,
-            $this->token_expiry,
             $this->id
         );
         $stmt->execute();
@@ -134,5 +130,45 @@ class FacebookPageTokens extends Model
             $pages[] = $row;
         }
         return $pages;
+    }
+
+
+
+
+    // -------------------- UTILIY METHODS --------------------
+    public static function findByComposite(array $conditions): ?FacebookPageTokens
+    {
+        $query = "SELECT * FROM `" . self::$table . "` WHERE ";
+        $params = [];
+        $types = '';
+        $clauses = [];
+
+        foreach ($conditions as $column => $value) {
+            $clauses[] = "`$column` = ?";
+
+            if (is_int($value)) {
+                $types .= 'i';
+            } elseif (is_double($value)) {
+                $types .= 'd';
+            } else {
+                $types .= 's';
+            }
+            $params[] = $value;
+        }
+
+        $query .= implode(' AND ', $clauses);
+        $stmt = self::getConnectionStatic()->prepare($query);
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            $token = new FacebookPageTokens();
+            $token->hydrate($row);
+            return $token;
+        }
+
+        return null;
     }
 }
