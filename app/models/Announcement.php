@@ -517,7 +517,7 @@ class Announcement extends Model
 
 
     /**
-     * Update announcement with datetimes
+     * Update the announcement along with its associated datetimes (all-in-one method)
      *
      * @param array $datetimes Optional array of datetime data
      * @return bool
@@ -525,114 +525,102 @@ class Announcement extends Model
      */
     public function updateWithDatetimes(array $datetimes = []): bool
     {
+        require_once __DIR__ . '/AnnouncementDatetime.php';
+
         error_log("updateWithDatetimes called for ID: " . $this->getId());
-        
-        // First update the main announcement
+
+        // --- Step 1: Update the main announcement ---
         $updateResult = $this->update();
         error_log("Main update result: " . ($updateResult ? 'true' : 'false'));
-        
+
         if (!$updateResult) {
             error_log("Main announcement update failed");
             return false;
         }
 
-        // Then handle datetimes if provided
-        if (!empty($datetimes)) {
-            error_log("Processing " . count($datetimes) . " datetimes");
+        // --- Step 2: Handle datetimes if provided ---
+        if (isset($datetimes)) {
             try {
-                $this->updateDatetimes($datetimes);
-                error_log("Datetimes updated successfully");
+                $announcementId = $this->getId();
+
+                // If datetimes array is empty → delete all
+                if (empty($datetimes)) {
+                    AnnouncementDatetime::deleteByAnnouncement($announcementId);
+                    error_log("All datetimes deleted for announcement {$announcementId} (empty array case)");
+                    return true;
+                }
+
+                // Build existing map
+                $existingDatetimes = AnnouncementDatetime::getByAnnouncement($announcementId);
+                $existingMap = [];
+                foreach ($existingDatetimes as $dt) {
+                    $existingMap[$dt->getId()] = $dt;
+                }
+
+                $usedIds = [];
+
+                // --- Process provided datetimes ---
+                foreach ($datetimes as $dt) {
+                    if (empty($dt['date'])) {
+                        error_log("Skipping datetime with empty date for announcement {$announcementId}");
+                        continue;
+                    }
+
+                    $start = $this->normalizeTime($dt['start'] ?? '');
+                    $end = $this->normalizeTime($dt['end'] ?? '');
+
+                    if (!empty($dt['id']) && isset($existingMap[$dt['id']])) {
+                        // Update existing
+                        $adt = new AnnouncementDatetime($dt['id']);
+                        $adt->setDate($dt['date']);
+                        $adt->setStartTime($start);
+                        $adt->setEndTime($end);
+
+                        if ($adt->update()) {
+                            $usedIds[] = $dt['id'];
+                            error_log("Updated datetime ID {$dt['id']} for announcement {$announcementId}");
+                        } else {
+                            error_log("Failed to update datetime ID {$dt['id']} for announcement {$announcementId}");
+                        }
+                    } else {
+                        // Insert new
+                        $adt = new AnnouncementDatetime();
+                        $adt->setAnnouncementId($announcementId);
+                        $adt->setDate($dt['date']);
+                        $adt->setStartTime($start);
+                        $adt->setEndTime($end);
+
+                        if ($adt->insert()) {
+                            error_log("Inserted new datetime for announcement {$announcementId} ({$dt['date']} $start-$end)");
+                        } else {
+                            error_log("Failed to insert new datetime for announcement {$announcementId}");
+                        }
+                    }
+                }
+
+                // --- Delete unused datetimes ---
+                foreach ($existingMap as $id => $dt) {
+                    if (!in_array($id, $usedIds)) {
+                        $delDt = new AnnouncementDatetime($id);
+                        if ($delDt->delete()) {
+                            error_log("Deleted datetime ID $id for announcement {$announcementId}");
+                        } else {
+                            error_log("Failed to delete datetime ID $id for announcement {$announcementId}");
+                        }
+                    }
+                }
+
+                error_log("Datetimes updated successfully for announcement {$announcementId}");
+
             } catch (Exception $e) {
                 error_log("Datetime update failed: " . $e->getMessage());
-                // Don't return false here - main update succeeded
-                // throw $e; // Uncomment if you want to fail the entire operation
+                // Optional: throw $e; // Uncomment if you want the entire operation to fail
             }
         }
 
         return true;
     }
 
-    /**
-     * Update announcement datetimes
-     *
-     * @param array $datetimes
-     * @return void
-     * @throws Exception
-     */
-    public function updateDatetimes(array $datetimes): void
-    {
-        require_once __DIR__ . '/AnnouncementDatetime.php';
-
-        // If no datetimes provided, delete all existing
-        if (empty($datetimes)) {
-            $existingDatetimes = AnnouncementDatetime::getByAnnouncement($this->getId());
-            foreach ($existingDatetimes as $dt) {
-                $delDt = new AnnouncementDatetime($dt->getId());
-                if ($delDt->delete()) {
-                    error_log("Deleted datetime ID {$dt->getId()} for announcement {$this->getId()} (empty array case)");
-                } else {
-                    error_log("❌ Failed to delete datetime ID {$dt->getId()} for announcement {$this->getId()}");
-                }
-            }
-            return;
-        }
-
-        // --- your old logic below ---
-        $existingDatetimes = AnnouncementDatetime::getByAnnouncement($this->getId());
-        $existingMap = [];
-        foreach ($existingDatetimes as $dt) {
-            $existingMap[$dt->getId()] = $dt;
-        }
-
-        $usedIds = [];
-
-        foreach ($datetimes as $dt) {
-            if (empty($dt['date'])) {
-                error_log("Skipping datetime with empty date for announcement {$this->getId()}");
-                continue;
-            }
-
-            $start = $this->normalizeTime($dt['start'] ?? '');
-            $end = $this->normalizeTime($dt['end'] ?? '');
-
-            if (!empty($dt['id']) && isset($existingMap[$dt['id']])) {
-                $adt = new AnnouncementDatetime($dt['id']);
-                $adt->setDate($dt['date']);
-                $adt->setStartTime($start);
-                $adt->setEndTime($end);
-
-                if ($adt->update()) {
-                    $usedIds[] = $dt['id'];
-                    error_log("Updated datetime ID {$dt['id']} for announcement {$this->getId()}");
-                } else {
-                    error_log("Failed to update datetime ID {$dt['id']} for announcement {$this->getId()}");
-                }
-            } else {
-                $adt = new AnnouncementDatetime();
-                $adt->setAnnouncementId($this->getId());
-                $adt->setDate($dt['date']);
-                $adt->setStartTime($start);
-                $adt->setEndTime($end);
-
-                if ($adt->insert()) {
-                    error_log("Inserted new datetime for announcement {$this->getId()} ({$dt['date']} $start-$end)");
-                } else {
-                    error_log("Failed to insert new datetime for announcement {$this->getId()}");
-                }
-            }
-        }
-
-        foreach ($existingMap as $id => $dt) {
-            if (!in_array($id, $usedIds)) {
-                $delDt = new AnnouncementDatetime($id);
-                if ($delDt->delete()) {
-                    error_log("Deleted datetime ID $id for announcement {$this->getId()}");
-                } else {
-                    error_log("Failed to delete datetime ID $id for announcement {$this->getId()}");
-                }
-            }
-        }
-    }
 
     /**
      * Normalize time format to HH:mm:ss

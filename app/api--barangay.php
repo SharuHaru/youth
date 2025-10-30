@@ -122,15 +122,15 @@ else if ($action === 'available-year-months') {
 else if($action === 'barangay-dashboard') {
     authorizeRequest(); // Ensure the user is authorized
     returnSuccess([
-        'SkOfficialCount' => $SKOfficialsCount = SkOfficial::getPositionCount( $_POST['barangaySlug']),
-        'reportAchievement' => $BarangayAchievement = Achievement::getMonthlySummary($_POST['barangaySlug']),
-        'reportAnnouncement' => $barangayAnnouncement = Announcement::getMonthlySummary($_POST['barangaySlug'])
+        'SkOfficialCount' => $SKOfficialsCount = SkOfficial::getPositionCount( $_POST['barangaySlug'])
     ]);
 }
 
 else if ($action === 'add-announcement') {
     authorizeRequest(); // Ensure the user is authorized
 
+
+    // Check if Announcement Info Exist
     if (empty($_POST['announcementInfo'])) {
         returnError('Invalid announcement information received.', 400);
     }
@@ -163,7 +163,10 @@ else if ($action === 'add-announcement') {
 
     $announcementInfo['is_featured'] = $announcementInfo['is_featured'] ?? 0;
 
+
+     
     try {
+        // ---  CREATE THE MAIN ANNOUNCEMENT  ---
         $announcement = new Announcement();
         $announcement->setBarangayId($announcementInfo['barangay_id']);
         $announcement->setTitle(trim($announcementInfo['title']));
@@ -174,13 +177,16 @@ else if ($action === 'add-announcement') {
         if (isset($announcementInfo['where'])) $announcement->setWhere($announcementInfo['where']);
         if (isset($announcementInfo['why'])) $announcement->setWhy($announcementInfo['why']);
 
+
+
+
+        // --- HANDLE CREATING ANNOUNCEMENT IMAGES ---
         if ($announcement->insert()) {
             $announcementId = $announcement->getId();
+            $thumbnailImageId = null;
 
             $uploadDir = __DIR__ . '/../public/Announcements/';
             if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-
-            $thumbnailImageId = null;
 
             // ✅ Map tempIds to actual DB IDs
             $tempIdMap = [];
@@ -215,10 +221,12 @@ else if ($action === 'add-announcement') {
             // ✅ Resolve thumbnail: use thumbnail_tempId if present
             if (!empty($announcementInfo['thumbnail_tempId']) && isset($tempIdMap[$announcementInfo['thumbnail_tempId']])) {
                 $thumbnailImageId = $tempIdMap[$announcementInfo['thumbnail_tempId']];
-            } elseif (!empty($announcementInfo['thumbnail_id'])) {
+            } 
+            elseif (!empty($announcementInfo['thumbnail_id'])) {
                 // fallback in case an existing DB image was selected
                 $thumbnailImageId = $announcementInfo['thumbnail_id'];
-            } else {
+            } 
+            else {
                 // ✅ Fallback: first uploaded image
                 if (!empty($tempIdMap)) {
                     $thumbnailImageId = reset($tempIdMap); // get first mapped image ID
@@ -230,7 +238,7 @@ else if ($action === 'add-announcement') {
                 $announcement->updateThumbnail();
             }
 
-            // ✅ Insert datetimes
+            // ---  HANDLE CREATING DATETIMES FOR THE ANNOUNCEMENT  ---
             $successfulDatetimes = 0;
             foreach ($announcementInfo['datetimes'] as $dt) {
                 $start = strlen($dt['start']) === 5 ? $dt['start'] . ':00' : $dt['start'];
@@ -261,8 +269,11 @@ else if ($action === 'add-announcement') {
     }
 }
 
+
+// In the Update Announcement API there are 3 things that you need to update the announcement details, announcement Date Times and Announcement Images
 else if ($action === 'update-announcement') {
     authorizeRequest(); // Ensure the user is authorized
+    print_r($_POST['announcementInfo']);
 
     // Check if Announcement Info Exist
     if (!isset($_POST['announcementInfo'])) {
@@ -288,52 +299,59 @@ else if ($action === 'update-announcement') {
         returnError('Barangay ID is required.', 400);
     }
 
-    $announcementInfo['is_featured'] = $announcementInfo['is_featured'] ?? 0;
-
     try {
         $announcement = new Announcement($announcementInfo['id']);
+
+        // Check if Announcement Exist in the Announcement Table
         if (!$announcement->getId()) {
             returnError('Announcement not found.', 404);
         }
 
+
+        // ✅ Update announcement fields
         $announcement->setBarangayId($announcementInfo['barangay_id']);
         $announcement->setTitle($announcementInfo['title']);
         $announcement->setDescription($announcementInfo['description']);
-        $announcement->setIsFeatured($announcementInfo['is_featured']);
+        $announcement->setIsFeatured($announcementInfo['is_featured'] ?? 0);
         if (isset($announcementInfo['what'])) $announcement->setWhat($announcementInfo['what']);
         if (isset($announcementInfo['who'])) $announcement->setWho($announcementInfo['who']);
         if (isset($announcementInfo['where'])) $announcement->setWhere($announcementInfo['where']);
         if (isset($announcementInfo['why'])) $announcement->setWhy($announcementInfo['why']);
 
-        // ✅ persist changes to announcements table
-        if (!$announcement->update()) {
-            returnError("Failed to update announcement record.", 500);
-        }
 
-        // --- IMAGE HANDLING ---
+        // --- ANNOUNCEMENT IMAGES HANDLING ---
         $uploadDir = __DIR__ . '/../public/Announcements/';
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
 
+
+        // 1. Create the instance of AnnouncementImage class to handle the images
         $announcementId = $announcement->getId();
         $existingImages = AnnouncementImage::getByAnnouncement($announcementId, true);
 
+
+        // 2. Get the Images from the payload
         $incomingImages = $announcementInfo['images'] ?? [];
         $incomingIds = array_filter(array_map(fn($img) => $img['id'] ?? null, $incomingImages));
 
-        // Delete images not in payload
+
+        // 3. Delete images in the database that is not in payload
         foreach ($existingImages as $existing) {
             if (!in_array($existing['id'], $incomingIds)) {
+                // Delete in the DB
                 $imgObj = new AnnouncementImage($existing['id']);
                 $imgObj->delete();
+
+                // Delete the Announcement Image Directory
                 $filePath = $uploadDir . $existing['name'];
                 if (file_exists($filePath)) unlink($filePath);
             }
         }
 
-        // ✅ Map tempIds for new uploads
+        // 4. Handle New Upload Images, map tempIds and Set Thumbnail
         $tempIdMap = [];
-
         if (!empty($_FILES['files']) && isset($_FILES['files']['name'])) {
+
+            // Loop through each uploaded file
             for ($i = 0; $i < count($_FILES['files']['name']); $i++) {
                 if ($_FILES['files']['error'][$i] === UPLOAD_ERR_OK) {
                     $filename = basename($_FILES['files']['name'][$i]);
@@ -355,45 +373,42 @@ else if ($action === 'update-announcement') {
                                 }
                             }
                         }
+
+
+
                     } else {
                         error_log("❌ Failed to upload file: " . $_FILES['files']['name'][$i]);
                     }
                 }
             }
-        }
 
-        // ✅ Resolve thumbnail
-        $thumbnailImageId = null;
-        if (!empty($announcementInfo['thumbnail_tempId']) && isset($tempIdMap[$announcementInfo['thumbnail_tempId']])) {
-            $thumbnailImageId = $tempIdMap[$announcementInfo['thumbnail_tempId']];
-        } elseif (!empty($announcementInfo['thumbnail_id'])) {
-            $thumbnailImageId = $announcementInfo['thumbnail_id']; // existing image
-        } else {
-            // ✅ Fallback: first available image (newly uploaded OR existing)
-            if (!empty($tempIdMap)) {
-                $thumbnailImageId = reset($tempIdMap); // first new upload
-            } elseif (!empty($incomingIds)) {
-                $thumbnailImageId = reset($incomingIds); // first kept existing image
+            // Updating the Thumbnail ID of the Announcement in the Database
+            $thumbnailImageId = null;
+            if (!empty($announcementInfo['thumbnail_tempId']) && isset($tempIdMap[$announcementInfo['thumbnail_tempId']])) {
+                $thumbnailImageId = $tempIdMap[$announcementInfo['thumbnail_tempId']];
+                print_r($tempIdMap);
+            } elseif (!empty($announcementInfo['thumbnail_id'])) {
+                $thumbnailImageId = $announcementInfo['thumbnail_id']; // existing image
+            } else {
+                // ✅ Fallback: first available image (newly uploaded OR existing)
+                if (!empty($tempIdMap)) {
+                    $thumbnailImageId = reset($tempIdMap); // first new upload
+                } elseif (!empty($incomingIds)) {
+                    $thumbnailImageId = reset($incomingIds); // first kept existing image
+                }
+            }
+
+
+            if ($thumbnailImageId !== null) {
+                $announcement->setThumbnailId($thumbnailImageId);
+                $announcement->updateThumbnail();
             }
         }
 
-
-        if ($thumbnailImageId !== null) {
-            $announcement->setThumbnailId($thumbnailImageId);
-            $announcement->updateThumbnail();
-        }
-
-        // ✅ Update datetimes
-        $datetimes = isset($announcementInfo['datetimes']) && is_array($announcementInfo['datetimes']) 
-            ? $announcementInfo['datetimes'] 
+        // --- ANNOUNCEMENT DATETIMES HANDLING ---
+        $datetimes = isset($announcementInfo['datetimes']) && is_array($announcementInfo['datetimes'])
+            ? $announcementInfo['datetimes']
             : [];
-
-        if (empty($datetimes)) {
-            AnnouncementDatetime::deleteByAnnouncement($announcementId);
-        } else {
-            $announcement->updateWithDatetimes($datetimes);
-        }
-
 
         if ($announcement->updateWithDatetimes($datetimes)) {
             returnSuccess([
@@ -404,6 +419,8 @@ else if ($action === 'update-announcement') {
         } else {
             returnError("Announcement update failed. Check server logs.", 500);
         }
+
+
 
     } catch (Exception $e) {
         error_log("Announcement update error: " . $e->getMessage());
