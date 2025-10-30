@@ -11,6 +11,8 @@ require_once __DIR__ . '/models/SkOfficial.php';
 require_once __DIR__ . '/models/Barangay.php';
 require_once __DIR__ . '/models/AuthorizedAccount.php';
 require_once __DIR__ . '/models/PasswordResets.php';
+require_once __DIR__ . '/models/BarangayFacebookPages.php';
+require_once __DIR__ . '/models/FacebookPageTokens.php';
 require_once __DIR__ . '/helpers/Mailer.php';
 
 /** Check Guard Constant */
@@ -120,8 +122,6 @@ if ($action === 'process-google')
     $user = $provider->getResourceOwner($token);
     $data = $user->toArray();
 
-    print_r($data);
-
     // Extract user info
     $facebookId = $user->getId();
     $email = $data['email'] ?? null;
@@ -198,7 +198,7 @@ else if ($action === 'process-facebook')
         'code' => $_POST['code']
     ]);
 
-    // 4. Exchange for long-lived token
+    // 4. Exchange for long-lived token and get expiry of the Token
     $exchangeUrl = "https://graph.facebook.com/v24.0/oauth/access_token?" .
     "grant_type=fb_exchange_token" .
     "&client_id={$appId}" .
@@ -207,72 +207,91 @@ else if ($action === 'process-facebook')
 
     $response = file_get_contents($exchangeUrl);
     $longLivedToken = json_decode($response, true);
+    $accessToken = $longLivedToken['access_token'];
     
     $expiryTokenUrl = "https://graph.facebook.com/v24.0/debug_token?" . "input_token={$longLivedToken['access_token']}&access_token={$appId}|{$appSecret}";
     $expiryResponse = file_get_contents($expiryTokenUrl);
     $expiry = json_decode($expiryResponse, true);
-    print_r(date('Y-m-d H:i:s' ,$expiry['data']['data_access_expires_at']));
-
-    // TEST 1: Get Pages
-    $accessToken = $longLivedToken['access_token'];
-    $pagesUrl = "https://graph.facebook.com/v24.0/me/accounts?access_token=$accessToken";
-    $pages = json_decode(file_get_contents($pagesUrl), true);;
-
-
 
     $user = $provider->getResourceOwner($shortLivedToken);
     $data = $user->toArray();
 
-    // Extract user info
+    // 5. Find the Account in the Database
     $facebookId = $user->getId();
     $email = $data['email'] ?? null;
-
-    // 5. Find the Account in the Database
     $account = AuthorizedAccount::findBy('provider_user_id', $facebookId);
 
     if(!$account) {
         returnError("This Facebook Account is not Authorized. Please contact the developer if you want to be authorized. Thank you :>", 400);
     }
 
-    // Set the long-lived access token
+    // 6. Set the long-lived access token and Expiry
     $account->setAccessToken($accessToken);
     $account->setTokenExpiry(date('Y-m-d H:i:s' ,$expiry['data']['data_access_expires_at']));
     $account->update();
     
 
-    $barangay = $account->getBarangay();
+    // TEST 1: Get Pages
+    $pagesUrl = "https://graph.facebook.com/v24.0/me/accounts?access_token=$accessToken";
+    $pages = json_decode(file_get_contents($pagesUrl), true);
 
-    // 6. Issue your own JWT/cookie
-    if($account) {
-        $date   = new DateTimeImmutable();
+    // Todo:: Filter out facebook pages that is in you business portfolio
+
+    
+    // Find the Barangay Facebook Page in the Database (only assumming that the client only has one Facebook Page)
+    $barangayFacebookPage = BarangayFacebookPages::findBy('barangay_id', $account->getBarangayId());
+
+
+    if ($barangayFacebookPage) {
+        // Compare the Page IDs
+        if ($pages['data'][0]['id'] === $barangayFacebookPage->getPageId()) {
+            // Page IDs match
+
+            // Find the the page access token that is under the barangay_page and authorized_account
+            $facebookPageToken = FacebookPageTokens::findByComposite([
+                'authorized_account_id' => $account->getId(),
+                'barangay_facebook_page_id' => $barangayFacebookPage->getId()
+            ]);
+
+            $facebookPageToken->setPageAccessToken($pages['data'][0]['access_token']);
+            $facebookPageToken->update();
+        } else {
+            // Page IDs do not match
+            echo "Facebook Page ID does not match the stored Barangay Facebook Page ID.";
+        }
+    } else {
+        
+        // If no barangay facebook page found then 
+        // Check if the facebook page is in business portfolio and a true facebook page of the barangay of the authorized account
+        // Then create a row of that barangay_facebook_page of that barangay
+    }
+    
+    // 7. Issue your own JWT/cookie
+    $barangay = $account->getBarangay();
+    if ($account) {
+        $date = new DateTimeImmutable();
         $expire_at = $date->modify('+4 week')->getTimestamp();
+
         $request_data = [
-            'iss'  => 'localhost.youth',                    // Issuer
-            'exp'  => $expire_at,                           // Expire
+            'iss' => 'localhost.youth',   // Issuer
+            'exp' => $expire_at,          // Expiration
             'barangayId' => $barangay->getId(),
-            'barangayName' => $barangay->getName(),  
-            'barangayUsername' => $barangay->getUsername()                  
+            'barangayName' => $barangay->getName(),
+            'barangayUsername' => $barangay->getUsername(),
+            'provider' => 'facebook',     // Optional: if you also support Google
+            'fb_user_id' => $facebookId   // 👈 Add this field
         ];
 
-        // Create the Token
-        $jwt = JWT::encode($request_data, $GLOBALS['secret_key'], 'HS256');      
+        $jwt = JWT::encode($request_data, $GLOBALS['secret_key'], 'HS256');
 
-        // Create and Set the JWT Cookie
-        setcookie(
-            "jwt",
-            $jwt,
-            [
-                "path" => "/",
-                // Set this to true in production
-                "secure" => false,     // only HTTPS
-                "httponly" => true,   // JavaScript can’t read it
-                "samesite" => "Strict"
-            ]
-        );
-
-
+        setcookie("jwt", $jwt, [
+            "path" => "/",
+            "secure" => false,     // set true in production (HTTPS)
+            "httponly" => true,
+            "samesite" => "Strict"
+        ]);
         returnSuccess([
-            'barangay' => $barangay->getAssoc(true),
+            'barangay' => $barangay->getAssoc()
         ]);
     }
 }
