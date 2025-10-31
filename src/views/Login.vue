@@ -161,7 +161,7 @@ export default {
       const scope = "public_profile,pages_manage_posts,pages_show_list,business_management";
 
 
-      const facebookAuthUrl = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&state=${provider}&response_type=code`;
+      const facebookAuthUrl = `https://www.facebook.com/v24.0/dialog/oauth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&state=${provider}&response_type=code`;
       window.location.href = facebookAuthUrl;
     },
     

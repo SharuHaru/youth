@@ -10,7 +10,6 @@ $facebookPageToken = new FacebookPageTokens();
 $facebookPageToken->setAuthorizedAccountId(1);
 $facebookPageToken->setBarangayFacebookPageId(24);
 $facebookPageToken->setPageAccessToken('EAAGm0PX4ZCpsBAKZCZA...');
-$facebookPageToken->setTokenExpiry('2025-12-31 23:59:59');
 
 if($facebookPageToken->insert()) {
     echo "Inserted Facebook Page Token with ID: " . $facebookPageToken->getId() . "\n";

@@ -1,7 +1,12 @@
 <?php
-
+use Firebase\JWT\JWT;
+use Firebase\JWT\JWK;
+use Firebase\JWT\Key;
 require_once __DIR__ . '/Model.php';
 require_once __DIR__ . '/AnnouncementImage.php';
+require_once __DIR__ . '/BarangayFacebookPages.php';
+require_once __DIR__ . '/FacebookPageTokens.php';
+
 
 class Announcement extends Model
 {
@@ -42,6 +47,10 @@ class Announcement extends Model
         }
     }
 
+
+
+
+    // -------------------- GETTERS --------------------
     /**
      * Gets Announcement barangay_id.
      * @return int
@@ -120,6 +129,11 @@ class Announcement extends Model
         return $this->is_featured;
     }
 
+
+
+
+
+    // -------------------- SETTERS --------------------
     /**
      * Sets Announcement barangay_id.
      * @param $barangay_id
@@ -149,8 +163,6 @@ class Announcement extends Model
     {
         $this->thumbnail_id = $thumbnailId;
     }
-
-
 
     /**
      * Sets Announcement description
@@ -213,6 +225,11 @@ class Announcement extends Model
     }
 
 
+
+
+
+
+    // -------------------- CRUD OPERATIONS --------------------
     /**
      * Retrieves all Announcement records, optionally filtering by Barangay.
      *
@@ -296,7 +313,121 @@ class Announcement extends Model
         return $announcements;
     }
 
+    /**
+     * Insert announcement
+     *
+     * @return bool
+     * @throws Exception
+     */
+    public function insert(): bool
+    {
+        $stmt = $this->getConnection()->prepare("
+            INSERT INTO `announcements` 
+            (`barangay_id`, `title`, `description`, `is_featured`, `what`, `who`, `where`, `why`)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ");
 
+        if (!$stmt) {
+            throw new Exception("Failed to prepare statement: " . $this->getConnection()->error);
+        }
+
+        $stmt->bind_param(
+            "ississss", 
+            $this->barangay_id,
+            $this->title,
+            $this->description,
+            $this->is_featured,
+            $this->what,
+            $this->who,
+            $this->where,
+            $this->why
+        );
+
+        $stmt->execute();
+
+        if ($stmt->affected_rows > 0) {
+            $this->setId($stmt->insert_id);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Update announcement
+     *
+     * @return bool
+     * @throws Exception
+     */
+    public function update(): bool
+    {
+        $stmt = $this->getConnection()->prepare("
+            UPDATE `" . self::$table . "` 
+            SET 
+                `barangay_id` = ?, 
+                `title` = ?, 
+                `description` = ?, 
+                `is_featured` = ?, 
+                `what` = ?, 
+                `who` = ?, 
+                `where` = ?, 
+                `why` = ?, 
+                `thumbnail_id` = ?
+            WHERE `id` = ?
+        ");
+
+        if (!$stmt) {
+            throw new Exception("Failed to prepare statement: " . $this->getConnection()->error);
+        }
+
+        $stmt->bind_param(
+            "ississssii",
+            $this->barangay_id,
+            $this->title,
+            $this->description,
+            $this->is_featured,
+            $this->what,
+            $this->who,
+            $this->where,
+            $this->why,
+            $this->thumbnail_id,
+            $this->id
+        );
+
+        if (!$stmt->execute()) {
+            error_log("SQL Execute Error: " . $stmt->error);
+            throw new Exception("Failed to execute update: " . $stmt->error);
+        }
+
+        error_log("Update executed for ID: {$this->id}, affected_rows: " . $stmt->affected_rows);
+
+        return $stmt->affected_rows >= 0;
+    }
+
+    /**
+     * Delete announcement
+     *
+     * @return bool
+     * @throws Exception
+     */
+    public function delete(): bool
+    {
+        // Delete associated datetimes first
+        require_once __DIR__ . '/AnnouncementDatetime.php';
+        AnnouncementDatetime::deleteByAnnouncement($this->getId());
+        
+        // Delete the announcement
+        $stmt = $this->getConnection()->prepare("DELETE FROM `" . self::$table . "` WHERE `id` = ?");
+        $stmt->bind_param("i", $this->id);
+        $stmt->execute();
+        return $stmt->affected_rows > 0;
+    }
+
+
+
+
+
+    // -------------------- UTILITY FUNCTIONS --------------------
     /**
      * Returns the count of announcements made in a given year for a specific barangay.
      *
@@ -422,275 +553,6 @@ class Announcement extends Model
         require_once __DIR__ . '/Barangay.php';
         $barangay = Barangay::find($this->barangay_id);
         return ($assoc && $barangay) ? $barangay->getAssoc($assoc_basic) : $barangay;
-    }
-
-    /**
-     * Insert announcement
-     *
-     * @return bool
-     * @throws Exception
-     */
-    public function insert(): bool
-    {
-        $stmt = $this->getConnection()->prepare("
-            INSERT INTO `announcements` 
-            (`barangay_id`, `title`, `description`, `is_featured`, `what`, `who`, `where`, `why`)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-
-        if (!$stmt) {
-            throw new Exception("Failed to prepare statement: " . $this->getConnection()->error);
-        }
-
-        $stmt->bind_param(
-            "ississss", 
-            $this->barangay_id,
-            $this->title,
-            $this->description,
-            $this->is_featured,
-            $this->what,
-            $this->who,
-            $this->where,
-            $this->why
-        );
-
-        $stmt->execute();
-
-        if ($stmt->affected_rows > 0) {
-            $this->setId($stmt->insert_id);
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Update announcement
-     *
-     * @return bool
-     * @throws Exception
-     */
-    public function update(): bool
-    {
-        $stmt = $this->getConnection()->prepare("
-            UPDATE `" . self::$table . "` 
-            SET 
-                `barangay_id` = ?, 
-                `title` = ?, 
-                `description` = ?, 
-                `is_featured` = ?, 
-                `what` = ?, 
-                `who` = ?, 
-                `where` = ?, 
-                `why` = ?, 
-                `thumbnail_id` = ?
-            WHERE `id` = ?
-        ");
-
-        if (!$stmt) {
-            throw new Exception("Failed to prepare statement: " . $this->getConnection()->error);
-        }
-
-        $stmt->bind_param(
-            "ississssii",
-            $this->barangay_id,
-            $this->title,
-            $this->description,
-            $this->is_featured,
-            $this->what,
-            $this->who,
-            $this->where,
-            $this->why,
-            $this->thumbnail_id,
-            $this->id
-        );
-
-        if (!$stmt->execute()) {
-            error_log("SQL Execute Error: " . $stmt->error);
-            throw new Exception("Failed to execute update: " . $stmt->error);
-        }
-
-        error_log("Update executed for ID: {$this->id}, affected_rows: " . $stmt->affected_rows);
-
-        return $stmt->affected_rows >= 0;
-    }
-
-
-    /**
-     * Update the announcement along with its associated datetimes (all-in-one method)
-     *
-     * @param array $datetimes Optional array of datetime data
-     * @return bool
-     * @throws Exception
-     */
-    public function updateWithDatetimes(array $datetimes = []): bool
-    {
-        require_once __DIR__ . '/AnnouncementDatetime.php';
-
-        error_log("updateWithDatetimes called for ID: " . $this->getId());
-
-        // --- Step 1: Update the main announcement ---
-        $updateResult = $this->update();
-        error_log("Main update result: " . ($updateResult ? 'true' : 'false'));
-
-        if (!$updateResult) {
-            error_log("Main announcement update failed");
-            return false;
-        }
-
-        // --- Step 2: Handle datetimes if provided ---
-        if (isset($datetimes)) {
-            try {
-                $announcementId = $this->getId();
-
-                // If datetimes array is empty → delete all
-                if (empty($datetimes)) {
-                    AnnouncementDatetime::deleteByAnnouncement($announcementId);
-                    error_log("All datetimes deleted for announcement {$announcementId} (empty array case)");
-                    return true;
-                }
-
-                // Build existing map
-                $existingDatetimes = AnnouncementDatetime::getByAnnouncement($announcementId);
-                $existingMap = [];
-                foreach ($existingDatetimes as $dt) {
-                    $existingMap[$dt->getId()] = $dt;
-                }
-
-                $usedIds = [];
-
-                // --- Process provided datetimes ---
-                foreach ($datetimes as $dt) {
-                    if (empty($dt['date'])) {
-                        error_log("Skipping datetime with empty date for announcement {$announcementId}");
-                        continue;
-                    }
-
-                    $start = $this->normalizeTime($dt['start'] ?? '');
-                    $end = $this->normalizeTime($dt['end'] ?? '');
-
-                    if (!empty($dt['id']) && isset($existingMap[$dt['id']])) {
-                        // Update existing
-                        $adt = new AnnouncementDatetime($dt['id']);
-                        $adt->setDate($dt['date']);
-                        $adt->setStartTime($start);
-                        $adt->setEndTime($end);
-
-                        if ($adt->update()) {
-                            $usedIds[] = $dt['id'];
-                            error_log("Updated datetime ID {$dt['id']} for announcement {$announcementId}");
-                        } else {
-                            error_log("Failed to update datetime ID {$dt['id']} for announcement {$announcementId}");
-                        }
-                    } else {
-                        // Insert new
-                        $adt = new AnnouncementDatetime();
-                        $adt->setAnnouncementId($announcementId);
-                        $adt->setDate($dt['date']);
-                        $adt->setStartTime($start);
-                        $adt->setEndTime($end);
-
-                        if ($adt->insert()) {
-                            error_log("Inserted new datetime for announcement {$announcementId} ({$dt['date']} $start-$end)");
-                        } else {
-                            error_log("Failed to insert new datetime for announcement {$announcementId}");
-                        }
-                    }
-                }
-
-                // --- Delete unused datetimes ---
-                foreach ($existingMap as $id => $dt) {
-                    if (!in_array($id, $usedIds)) {
-                        $delDt = new AnnouncementDatetime($id);
-                        if ($delDt->delete()) {
-                            error_log("Deleted datetime ID $id for announcement {$announcementId}");
-                        } else {
-                            error_log("Failed to delete datetime ID $id for announcement {$announcementId}");
-                        }
-                    }
-                }
-
-                error_log("Datetimes updated successfully for announcement {$announcementId}");
-
-            } catch (Exception $e) {
-                error_log("Datetime update failed: " . $e->getMessage());
-                // Optional: throw $e; // Uncomment if you want the entire operation to fail
-            }
-        }
-
-        return true;
-    }
-
-
-    /**
-     * Normalize time format to HH:mm:ss
-     *
-     * @param string $time
-     * @return string
-     */
-    private function normalizeTime(string $time): string
-    {
-        if (empty($time)) {
-            return '';
-        }
-
-        // If already in HH:mm:ss format, return as is
-        if (preg_match('/^\d{2}:\d{2}:\d{2}$/', $time)) {
-            return $time;
-        }
-
-        // If in HH:mm format, add :00
-        if (preg_match('/^\d{2}:\d{2}$/', $time)) {
-            return $time;
-        }
-
-        // If in H:mm format, pad hour
-        if (preg_match('/^\d{1}:\d{2}$/', $time)) {
-            return '0' . $time;
-        }
-
-        // If in H:mm:ss format, pad hour
-        if (preg_match('/^\d{1}:\d{2}:\d{2}$/', $time)) {
-            return '0' . $time;
-        }
-
-        return $time;
-    }
-
-    /**
-     * Delete announcement
-     *
-     * @return bool
-     * @throws Exception
-     */
-    public function delete(): bool
-    {
-        // Delete associated datetimes first
-        require_once __DIR__ . '/AnnouncementDatetime.php';
-        AnnouncementDatetime::deleteByAnnouncement($this->getId());
-        
-        // Delete the announcement
-        $stmt = $this->getConnection()->prepare("DELETE FROM `" . self::$table . "` WHERE `id` = ?");
-        $stmt->bind_param("i", $this->id);
-        $stmt->execute();
-        return $stmt->affected_rows > 0;
-    }
-
-    public function updateThumbnail(): bool
-    {
-        $stmt = $this->getConnection()->prepare("
-            UPDATE `announcements` 
-            SET `thumbnail_id` = ? 
-            WHERE `id` = ?
-        ");
-
-        if (!$stmt) {
-            throw new Exception("Failed to prepare statement: " . $this->getConnection()->error);
-        }
-
-        $stmt->bind_param("ii", $this->thumbnail_id, $this->id);
-
-        return $stmt->execute();
     }
 
     /**
@@ -884,6 +746,231 @@ class Announcement extends Model
         }
 
         return $announcements;
+    }
+
+    /**
+     * Get featured announcements
+     * @throws Exception
+     */
+    public function uploadToFacebook() {
+        $jwt = $_COOKIE['jwt'];
+        $page_access_token = null;
+
+        try {
+            $decoded = JWT::decode($jwt, new Key($GLOBALS['secret_key'], 'HS256'));
+            $account = AuthorizedAccount::findBy('provider_user_id', $decoded->fb_user_id);
+            $barangay = Barangay::findBy('id', $decoded->barangayId);
+            $barangayFacebookPage = BarangayFacebookPages::findBy('barangay_id', $barangay->getId());
+
+            $page_access_token = FacebookPageTokens::findByComposite([
+                'authorized_account_id' => $account->getId(),
+                'barangay_facebook_page_id' => $barangayFacebookPage->getId()
+            ]);
+
+        } catch (Exception $e) {
+            http_response_code(401);
+            echo json_encode(["error" => "Unauthorized"]);
+            exit;
+        }
+
+        // ✅ At this point, you have a valid $page_access_token->getAccessToken()
+
+        $message = "Project" . $this->title . "This is a test post from the Barangay system!";
+        $photoPath = __DIR__ . "/../../public/Announcements/no-avatar.png"; // optional
+        if (!file_exists($photoPath)) {
+            echo json_encode(["error" => "File not found: $photoPath"]);
+            exit;
+        }
+        if (!is_readable($photoPath)) {
+            echo json_encode(["error" => "File not readable: $photoPath"]);
+            exit;
+        }
+
+        $graphUrl = "https://graph.facebook.com/v24.0/{$barangayFacebookPage->getPageId()}/photos";
+
+        $ch = curl_init();
+        $data = [
+            'message' => $message,
+            'access_token' => $page_access_token->getPageAccessToken(),
+            'source' => new CURLFile($photoPath)
+        ];
+
+        curl_setopt($ch, CURLOPT_URL, $graphUrl);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_VERBOSE, true);
+
+
+        $response = curl_exec($ch);
+        if (curl_errno($ch)) {
+            echo json_encode(["error" => curl_error($ch)]);
+        } else {
+            echo $response;
+        }
+        curl_close($ch);
+    }
+
+
+
+    
+
+    // -------------------- HELPER FUNCTIONS --------------------
+
+    /**
+     * Update the announcement along with its associated datetimes (all-in-one method)
+     * @param array $datetimes Optional array of datetime data
+     * @return bool
+     * @throws Exception
+     */
+    public function updateWithDatetimes(array $datetimes = []): bool
+    {
+        require_once __DIR__ . '/AnnouncementDatetime.php';
+
+        error_log("updateWithDatetimes called for ID: " . $this->getId());
+
+        // --- Step 1: Update the main announcement ---
+        $updateResult = $this->update();
+        error_log("Main update result: " . ($updateResult ? 'true' : 'false'));
+
+        if (!$updateResult) {
+            error_log("Main announcement update failed");
+            return false;
+        }
+
+        // --- Step 2: Handle datetimes if provided ---
+        if (isset($datetimes)) {
+            try {
+                $announcementId = $this->getId();
+
+                // If datetimes array is empty → delete all
+                if (empty($datetimes)) {
+                    AnnouncementDatetime::deleteByAnnouncement($announcementId);
+                    error_log("All datetimes deleted for announcement {$announcementId} (empty array case)");
+                    return true;
+                }
+
+                // Build existing map
+                $existingDatetimes = AnnouncementDatetime::getByAnnouncement($announcementId);
+                $existingMap = [];
+                foreach ($existingDatetimes as $dt) {
+                    $existingMap[$dt->getId()] = $dt;
+                }
+
+                $usedIds = [];
+
+                // --- Process provided datetimes ---
+                foreach ($datetimes as $dt) {
+                    if (empty($dt['date'])) {
+                        error_log("Skipping datetime with empty date for announcement {$announcementId}");
+                        continue;
+                    }
+
+                    $start = $this->normalizeTime($dt['start'] ?? '');
+                    $end = $this->normalizeTime($dt['end'] ?? '');
+
+                    if (!empty($dt['id']) && isset($existingMap[$dt['id']])) {
+                        // Update existing
+                        $adt = new AnnouncementDatetime($dt['id']);
+                        $adt->setDate($dt['date']);
+                        $adt->setStartTime($start);
+                        $adt->setEndTime($end);
+
+                        if ($adt->update()) {
+                            $usedIds[] = $dt['id'];
+                            error_log("Updated datetime ID {$dt['id']} for announcement {$announcementId}");
+                        } else {
+                            error_log("Failed to update datetime ID {$dt['id']} for announcement {$announcementId}");
+                        }
+                    } else {
+                        // Insert new
+                        $adt = new AnnouncementDatetime();
+                        $adt->setAnnouncementId($announcementId);
+                        $adt->setDate($dt['date']);
+                        $adt->setStartTime($start);
+                        $adt->setEndTime($end);
+
+                        if ($adt->insert()) {
+                            error_log("Inserted new datetime for announcement {$announcementId} ({$dt['date']} $start-$end)");
+                        } else {
+                            error_log("Failed to insert new datetime for announcement {$announcementId}");
+                        }
+                    }
+                }
+
+                // --- Delete unused datetimes ---
+                foreach ($existingMap as $id => $dt) {
+                    if (!in_array($id, $usedIds)) {
+                        $delDt = new AnnouncementDatetime($id);
+                        if ($delDt->delete()) {
+                            error_log("Deleted datetime ID $id for announcement {$announcementId}");
+                        } else {
+                            error_log("Failed to delete datetime ID $id for announcement {$announcementId}");
+                        }
+                    }
+                }
+
+                error_log("Datetimes updated successfully for announcement {$announcementId}");
+
+            } catch (Exception $e) {
+                error_log("Datetime update failed: " . $e->getMessage());
+                // Optional: throw $e; // Uncomment if you want the entire operation to fail
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Normalize time format to HH:mm:ss
+     *
+     * @param string $time
+     * @return string
+     */
+    private function normalizeTime(string $time): string
+    {
+        if (empty($time)) {
+            return '';
+        }
+
+        // If already in HH:mm:ss format, return as is
+        if (preg_match('/^\d{2}:\d{2}:\d{2}$/', $time)) {
+            return $time;
+        }
+
+        // If in HH:mm format, add :00
+        if (preg_match('/^\d{2}:\d{2}$/', $time)) {
+            return $time;
+        }
+
+        // If in H:mm format, pad hour
+        if (preg_match('/^\d{1}:\d{2}$/', $time)) {
+            return '0' . $time;
+        }
+
+        // If in H:mm:ss format, pad hour
+        if (preg_match('/^\d{1}:\d{2}:\d{2}$/', $time)) {
+            return '0' . $time;
+        }
+
+        return $time;
+    }
+
+    public function updateThumbnail(): bool
+    {
+        $stmt = $this->getConnection()->prepare("
+            UPDATE `announcements` 
+            SET `thumbnail_id` = ? 
+            WHERE `id` = ?
+        ");
+
+        if (!$stmt) {
+            throw new Exception("Failed to prepare statement: " . $this->getConnection()->error);
+        }
+
+        $stmt->bind_param("ii", $this->thumbnail_id, $this->id);
+
+        return $stmt->execute();
     }
 
 }
