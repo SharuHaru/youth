@@ -158,7 +158,7 @@ export default {
       const clientId = "2642256836111553";
       const provider = "facebook";
       const redirectUri = "http://localhost:5173/login";
-      const scope = "public_profile,pages_manage_posts,pages_show_list,business_management";
+      const scope = "public_profile,pages_manage_posts,pages_show_list,business_management,email";
 
 
       const facebookAuthUrl = `https://www.facebook.com/v24.0/dialog/oauth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&state=${provider}&response_type=code`;
