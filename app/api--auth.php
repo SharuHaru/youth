@@ -216,56 +216,86 @@ else if ($action === 'process-facebook')
     $user = $provider->getResourceOwner($shortLivedToken);
     $data = $user->toArray();
 
+
     // 5. Find the Account in the Database
     $facebookId = $user->getId();
     $email = $data['email'] ?? null;
     $account = AuthorizedAccount::findBy('provider_user_id', $facebookId);
+    print_r($data);
 
-    if(!$account) {
-        returnError("This Facebook Account is not Authorized. Please contact the developer if you want to be authorized. Thank you :>", 400);
-    }
 
-    // 6. Set the long-lived access token and Expiry
-    $account->setAccessToken($accessToken);
-    $account->setTokenExpiry(date('Y-m-d H:i:s' ,$expiry['data']['data_access_expires_at']));
-    $account->update();
-    
-
-    // TEST 1: Get Pages
+    // Get Facebook Pages that the user has access to
     $pagesUrl = "https://graph.facebook.com/v24.0/me/accounts?access_token=$accessToken";
     $pages = json_decode(file_get_contents($pagesUrl), true);
-
-    // Todo:: Filter out facebook pages that is in you business portfolio
-
     
-    // Find the Barangay Facebook Page in the Database (only assumming that the client only has one Facebook Page)
-    $barangayFacebookPage = BarangayFacebookPages::findBy('barangay_id', $account->getBarangayId());
 
-
-    if ($barangayFacebookPage) {
-        // Compare the Page IDs
-        if ($pages['data'][0]['id'] === $barangayFacebookPage->getPageId()) {
-            // Page IDs match
-
-            // Find the the page access token that is under the barangay_page and authorized_account
-            $facebookPageToken = FacebookPageTokens::findByComposite([
-                'authorized_account_id' => $account->getId(),
-                'barangay_facebook_page_id' => $barangayFacebookPage->getId()
-            ]);
-
-            $facebookPageToken->setPageAccessToken($pages['data'][0]['access_token']);
-            $facebookPageToken->update();
-        } else {
-            // Page IDs do not match
-            echo "Facebook Page ID does not match the stored Barangay Facebook Page ID.";
-        }
-    } else {
+    if(!$account) {
+        // Create an Authorized Account if not exists
+        $account = new AuthorizedAccount();
+        $account->setProvider('facebook');
+        $account->setProviderUserId($facebookId);
+        $account->setEmail($email);
+        $account->setName($user->getName());
+        $account->setPicture($user->getPictureUrl());
+        $account->setAccessToken($accessToken);
+        $account->setTokenExpiry(date('Y-m-d H:i:s' ,$expiry['data']['data_access_expires_at']));
         
-        // If no barangay facebook page found then 
-        // Check if the facebook page is in business portfolio and a true facebook page of the barangay of the authorized account
-        // Then create a row of that barangay_facebook_page of that barangay
+        // Get the Account Page Access Token to Find the Barangay Facebook Page
+        $pagesUrl = "https://graph.facebook.com/v24.0/me/accounts?access_token=$accessToken";
+        $pages = json_decode(file_get_contents($pagesUrl), true);
+        $barangayFacebookPage = BarangayFacebookPages::findBy('page_id', $pages['data'][0]['id']);
+        
+        // Set the Barangay ID from the Barangay Facebook Page
+        if ($barangayFacebookPage) {
+            $account->setBarangayId($barangayFacebookPage->getBarangayId());
+        } else {
+            returnError("The Facebook Page you selected isn't a part of Youth Ecosystem. Please Select Authorized Facebook Page. Thank you :>", 400);
+        }
+
+        // Then store the Page Access Token of that Account if the insert is successful and Barangay Facebook Page is in the Database
+        if($account->insert() && $barangayFacebookPage) {
+            $facebookPageToken = new FacebookPageTokens();
+            $facebookPageToken->setAuthorizedAccountId($account->getId());
+            $facebookPageToken->setBarangayFacebookPageId($barangayFacebookPage->getId());
+            $facebookPageToken->setPageAccessToken($pages['data'][0]['access_token']);
+            $facebookPageToken->insert();
+        }
     }
-    
+    else 
+    {
+        // 6. Set the long-lived access token and Expiry
+        $account->setAccessToken($accessToken);
+        $account->setTokenExpiry(date('Y-m-d H:i:s' ,$expiry['data']['data_access_expires_at']));
+        $account->update();
+
+        // Find the Barangay Facebook Page in the Database (only assumming that the client only has one Facebook Page)
+        $barangayFacebookPage = BarangayFacebookPages::findBy('barangay_id', $account->getBarangayId());
+
+        if ($barangayFacebookPage) {
+            // Compare the Page IDs
+            if ($pages['data'][0]['id'] === $barangayFacebookPage->getPageId()) {
+                // Page IDs match
+
+                // Find the the page access token that is under the barangay_page and authorized_account
+                $facebookPageToken = FacebookPageTokens::findByComposite([
+                    'authorized_account_id' => $account->getId(),
+                    'barangay_facebook_page_id' => $barangayFacebookPage->getId()
+                ]);
+
+                $facebookPageToken->setPageAccessToken($pages['data'][0]['access_token']);
+                $facebookPageToken->update();
+            } else {
+                // Page IDs do not match
+                echo "Facebook Page ID does not match the stored Barangay Facebook Page ID.";
+            }
+        } else {
+            
+            // If no barangay facebook page found then 
+            // Check if the facebook page is in business portfolio and a true facebook page of the barangay of the authorized account
+            // Then create a row of that barangay_facebook_page of that barangay
+        }
+    }
+
     // 7. Issue your own JWT/cookie
     $barangay = $account->getBarangay();
     if ($account) {
