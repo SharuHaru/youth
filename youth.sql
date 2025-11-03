@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 29, 2025 at 08:51 AM
+-- Generation Time: Nov 03, 2025 at 05:09 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -128,6 +128,8 @@ CREATE TABLE `announcements` (
   `where` varchar(255) NOT NULL,
   `gmap_link` varchar(255) NOT NULL,
   `is_featured` tinyint(1) NOT NULL DEFAULT 0,
+  `facebook_post_id` varchar(75) DEFAULT NULL,
+  `facebook_object_id` varchar(75) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -136,14 +138,17 @@ CREATE TABLE `announcements` (
 -- Dumping data for table `announcements`
 --
 
-INSERT INTO `announcements` (`id`, `barangay_id`, `title`, `thumbnail_id`, `description`, `what`, `who`, `why`, `where`, `gmap_link`, `is_featured`, `created_at`, `updated_at`) VALUES
-(59, 1, 'Clean-up Drive', 126, 'A community-wide cfegflean-up activity.', 'Clean surroundings', 'Barangay Youth Council', 'Promote cleanliness', 'Barangay Plaza', 'https://maps.google.com/example1', 1, '2025-08-23 11:52:18', '2025-10-05 06:35:41'),
-(60, 1, 'Tree Plantiin', 107, 'Join us in planting trees along the main road.', 'Tree planting', 'Barangay Youth & Volunteers', 'Environmental sustainability', 'Barangay Park', 'https://maps.google.com/example2', 1, '2025-08-23 11:52:18', '2025-08-26 07:07:20'),
-(61, 1, 'Sports Tournament', 108, 'Basketball and Volleyball tournament for the youth.', 'Sports activities', 'Barangay Sports Committee', 'Promote healthy lifestyle', 'Barangay Gym', 'https://maps.google.com/example3', 1, '2025-08-23 11:52:18', '2025-08-25 02:13:23'),
-(63, 1, 'Job Fair 2025', 120, 'Local employers offering job opportuerewrnities.', 'Employment opportunities', 'Barangay Officials', 'Support livelihood', 'Covered Court', 'https://maps.google.com/example5', 1, '2025-08-23 11:52:18', '2025-08-26 16:18:12'),
-(65, 1, 'Medical Mission', NULL, 'Free medical check-up and consultation.', 'Free medical check-up', 'Local Doctors & Volunteers', 'Improve health awareness', 'Barangay Health Center', 'https://maps.google.com/example7', 1, '2025-08-23 11:52:18', '2025-08-25 02:06:28'),
-(66, 1, 'dfgfd', 121, 'dfgfgd', 'dgdf', 'dfdf', 'dfgfd', 'dfgd', '', 0, '2025-08-26 16:18:40', '2025-08-26 16:18:40'),
-(67, 2, 'Barangay Francia Announcement', 125, 'dsdfs', 'sfdsd', 'sdfds', 'sdfds', 'fdsfd', '', 0, '2025-08-27 07:48:43', '2025-08-27 07:48:43');
+INSERT INTO `announcements` (`id`, `barangay_id`, `title`, `thumbnail_id`, `description`, `what`, `who`, `why`, `where`, `gmap_link`, `is_featured`, `facebook_post_id`, `facebook_object_id`, `created_at`, `updated_at`) VALUES
+(59, 1, 'Clean-up Drive 🍦', 144, 'A community-wide cfegflean-up activityc.', 'Clean surroundings', 'Barangay Youth Council', 'Promote cleanlinesss', 's', 'https://maps.google.com/example1', 1, NULL, NULL, '2025-08-23 11:52:18', '2025-11-03 08:16:38'),
+(60, 1, 'Tree Plantiin', 107, 'Join us in planting trees along the main road.', 'Tree planting', 'Barangay Youth & Volunteers', 'Environmental sustainability', 'Barangay Park', 'https://maps.google.com/example2', 1, NULL, NULL, '2025-08-23 11:52:18', '2025-08-26 07:07:20'),
+(61, 1, 'Sports Tournament', 108, 'Basketball and Volleyball tournament for the youth.', 'Sports activities', 'Barangay Sports Committee', 'Promote healthy lifestyle', 'Barangay Gym', 'https://maps.google.com/example3', 1, NULL, NULL, '2025-08-23 11:52:18', '2025-08-25 02:13:23'),
+(63, 1, 'Job Fair 2025', 120, 'Local employers offering job opportuerewrnities.', 'Employment opportunities', 'Barangay Officials', 'Support livelihood', 'Covered Court', 'https://maps.google.com/example5', 1, NULL, NULL, '2025-08-23 11:52:18', '2025-08-26 16:18:12'),
+(65, 1, 'Medical Mission', NULL, 'Free medical check-up and consultation.', 'Free medical check-up', 'Local Doctors & Volunteers', 'Improve health awareness', 'Barangay Health Center', 'https://maps.google.com/example7', 1, NULL, NULL, '2025-08-23 11:52:18', '2025-08-25 02:06:28'),
+(66, 1, 'dfgfd', 121, 'dfgfgd', 'dgdf', 'dfdf', 'dfgfd', 'dfgd', '', 0, NULL, NULL, '2025-08-26 16:18:40', '2025-08-26 16:18:40'),
+(67, 2, 'Barangay Francia Announcement', 125, 'dsdfs', 'sfdsd', 'sdfds', 'sdfds', 'fdsfd', '', 0, NULL, NULL, '2025-08-27 07:48:43', '2025-08-27 07:48:43'),
+(76, 1, 'adadad', NULL, 'asdsad', 'asdasd', 'asadsd', 'asd', 'saadsdsa', '', 0, NULL, NULL, '2025-11-03 06:35:20', '2025-11-03 06:35:20'),
+(77, 1, 'Clean-up Drive 🍦', NULL, 'A community-wide cfegflean-up activityc.', 'Clean surroundings', 'Barangay Youth Council', 'Promote cleanlinesss', 'Barangay Plaza', '', 0, NULL, NULL, '2025-11-03 06:39:20', '2025-11-03 06:39:20'),
+(81, 1, 'Sports Tournament', 157, 'Basketball and Volleyball tournament for the youth.', 'Sports activities', 'Barangay Sports Committee', 'Promote healthy lifestyle', 'Barangay Gym', '', 0, NULL, NULL, '2025-11-03 08:25:48', '2025-11-03 08:25:48');
 
 -- --------------------------------------------------------
 
@@ -167,13 +172,21 @@ CREATE TABLE `announcement_datetime` (
 
 INSERT INTO `announcement_datetime` (`id`, `announcement_id`, `date`, `start_time`, `end_time`, `created_at`, `updated_at`) VALUES
 (80, 61, '2025-08-22', '09:00:00', '17:00:00', '2025-08-23 15:01:18', '2025-08-23 15:01:18'),
-(84, 59, '2022-04-22', '18:00', '06:00', '2025-08-24 04:49:50', '2025-08-24 04:49:50'),
 (86, 63, '2025-08-29', '09:00:00', '17:00:00', '2025-08-24 05:28:54', '2025-08-24 05:28:54'),
 (106, 65, '2025-06-22', '09:00:00', '17:00:00', '2025-08-25 13:56:18', '2025-08-25 13:56:18'),
 (107, 65, '2025-06-24', '09:00:00', '17:00:00', '2025-08-25 13:56:18', '2025-08-25 13:56:18'),
 (118, 66, '2025-08-20', '09:00:00', '17:00:00', '2025-08-26 16:18:40', '2025-08-26 16:18:40'),
 (119, 66, '2025-08-28', '09:00:00', '17:00:00', '2025-08-26 16:18:40', '2025-08-26 16:18:40'),
-(120, 67, '2025-08-21', '09:00:00', '17:00:00', '2025-08-27 07:48:43', '2025-08-27 07:48:43');
+(120, 67, '2025-08-21', '09:00:00', '17:00:00', '2025-08-27 07:48:43', '2025-08-27 07:48:43'),
+(131, 59, '2025-10-22', '06:00', '19:00', '2025-10-30 15:29:18', '2025-10-30 15:29:18'),
+(132, 59, '2025-10-23', '09:00:00', '17:00:00', '2025-10-30 15:29:18', '2025-10-30 15:29:18'),
+(133, 59, '2025-10-24', '09:00:00', '17:00:00', '2025-10-30 15:29:18', '2025-10-30 15:29:18'),
+(145, 76, '2025-11-26', '09:00:00', '17:00:00', '2025-11-03 06:35:20', '2025-11-03 06:35:20'),
+(146, 77, '2025-11-18', '09:00:00', '17:00:00', '2025-11-03 06:39:20', '2025-11-03 06:39:20'),
+(154, 81, '2025-11-20', '09:00:00', '17:00:00', '2025-11-03 08:25:48', '2025-11-03 08:25:48'),
+(155, 81, '2025-11-19', '09:00:00', '17:00:00', '2025-11-03 08:25:48', '2025-11-03 08:25:48'),
+(156, 81, '2025-11-17', '09:00:00', '17:00:00', '2025-11-03 08:25:48', '2025-11-03 08:25:48'),
+(157, 81, '2025-11-18', '09:00:00', '17:00:00', '2025-11-03 08:25:48', '2025-11-03 08:25:48');
 
 -- --------------------------------------------------------
 
@@ -196,15 +209,17 @@ CREATE TABLE `announcement_image` (
 INSERT INTO `announcement_image` (`id`, `announcement_id`, `name`, `created_at`, `updated_at`) VALUES
 (107, 60, 'bb_tryout.jpg', '2025-08-24 07:13:11', '2025-08-24 07:13:11'),
 (108, 61, 'kk_ass.jpg', '2025-08-24 07:13:23', '2025-08-24 07:13:23'),
-(110, 59, '531719838_746165091382935_8137629482291917304_n.jpg', '2025-08-24 08:18:16', '2025-08-24 08:18:16'),
 (120, 63, '1730117975999.png', '2025-08-26 16:18:12', '2025-08-26 16:18:12'),
 (121, 66, 'wp2367468-honda-civic-type-r-wallpapers.jpg', '2025-08-26 16:18:40', '2025-08-26 16:18:40'),
 (122, 66, 'wp4826572-spider-amoled-wallpapers.jpg', '2025-08-26 16:18:40', '2025-08-26 16:18:40'),
 (123, 66, 'wp4826572.jpg', '2025-08-26 16:18:40', '2025-08-26 16:18:40'),
 (124, 66, 'wp8227766.jpg', '2025-08-26 16:18:40', '2025-08-26 16:18:40'),
 (125, 67, '6a02a4d97be96796b9a816f4a3b420e0.png', '2025-08-27 07:48:43', '2025-08-27 07:48:43'),
-(126, 59, '6a02a4d97be96796b9a816f4a3b420e0.png', '2025-10-05 06:35:41', '2025-10-05 06:35:41'),
-(127, 59, '6bd01ad61378e91b7fe8eed1694d508f.png', '2025-10-05 06:35:41', '2025-10-05 06:35:41');
+(143, 59, 'Screenshot 2025-10-09 102303.png', '2025-10-30 18:52:59', '2025-10-30 18:52:59'),
+(144, 59, 'Screenshot 2025-10-13 094654.png', '2025-10-30 18:52:59', '2025-10-30 18:52:59'),
+(157, 81, '426ea488fae0096bbb5df51aab4aea4d.png', '2025-11-03 08:25:48', '2025-11-03 08:25:48'),
+(158, 81, '470e72f464163e96d9f87de75083b63a.png', '2025-11-03 08:25:48', '2025-11-03 08:25:48'),
+(159, 81, '3130f31bc56c7ffb96941809d6dbebef.png', '2025-11-03 08:25:48', '2025-11-03 08:25:48');
 
 -- --------------------------------------------------------
 
@@ -221,7 +236,7 @@ CREATE TABLE `authorized_accounts` (
   `name` varchar(255) NOT NULL,
   `picture` text NOT NULL,
   `access_token` text NOT NULL,
-  `refresh_token` text NOT NULL,
+  `refresh_token` text DEFAULT NULL,
   `token_expiry` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
@@ -233,7 +248,7 @@ CREATE TABLE `authorized_accounts` (
 
 INSERT INTO `authorized_accounts` (`id`, `barangay_id`, `provider`, `provider_user_id`, `email`, `name`, `picture`, `access_token`, `refresh_token`, `token_expiry`, `created_at`, `updated_at`) VALUES
 (1, 1, 'google', '111974584167448821561', 'chatgpt4youth@gmail.com', 'Youth', 'https://lh3.googleusercontent.com/a/ACg8ocJkwM7_lMqhDwgYaoVtWP8DsooJwj6YBYWgLOK39C7NAQDA7nE=s96-c', '', '', NULL, '2025-09-18 08:45:21', '2025-10-09 02:57:02'),
-(3, 1, 'facebook', '122108195955031929', 'chatgpt4youth@gmail.com', 'Youthy Hubby', 'https://platform-lookaside.fbsbx.com/platform/profilepic/?asid=122105131749031929&height=200&width=200&ext=1762438450&hash=AT9Us56bcMgwSTKIFDyutLzC', 'EAAljHlwfLMEBP3w4S4h1jDegkEFnEQMZC7Asgi3bHXQO7NzcVr8aFGRdWE8vfPLzueQLWZAToqs9Ez9Mpd5bRvqDv2M0VRfmMoK4cbRp1C4FsA1uNr0SCrTzGjfN0pLYATKq4On93892YQC2ec9JnZAfvkC5Ki1AsfU8uaYcESdrUXd2A1aFL1cBBMeG1cGUn3rCJfTXSHzoCXO', '', '2026-01-27 07:43:50', '2025-10-07 14:18:17', '2025-10-29 07:43:56');
+(4, 1, 'facebook', '122108195955031929', 'chatgpt4youth@gmail.com', 'Youthy Hubby', 'https://platform-lookaside.fbsbx.com/platform/profilepic/?asid=122108195955031929&height=200&width=200&ext=1764576803&hash=AT_0iHywPw-WAt2OK5kz7q8g', 'EAAljHlwfLMEBP112MEbDuUJZCF90N6yeTbUXRlksYZCBJL1opdNnW8x02z5pdTSBZBcmj53cbJLTzEvb2HXZCCSmr1x1WBm0RPLx2c2uugpXTs94Tp6JnL4IxWkDf7ezc5Bsr2Rqf49eCZBh066MXOUAXmbS0NHCVmNMsdKxfSgiK5PhgJtywBvBIylAIpPAJrR3IrYTnQ4C0', NULL, '2026-02-01 03:08:11', '2025-11-01 08:13:22', '2025-11-03 03:08:14');
 
 -- --------------------------------------------------------
 
@@ -389,8 +404,7 @@ CREATE TABLE `facebook_page_tokens` (
 --
 
 INSERT INTO `facebook_page_tokens` (`id`, `authorized_account_id`, `barangay_facebook_page_id`, `page_access_token`, `created_at`, `updated_at`) VALUES
-(1, 3, 1, 'EAAljHlwfLMEBP6H6Drm4sKiZBLljZCjVfjUQnB9pgPZBgMZCZBck8vDOzcGrPp5VkjMch3jKBkzdiHEVIYhLLU0jUyuZAKGZCyeiR3TgneumdWT0E79UV4RvAspRkxQjmZB67wrVnSZBpZCG32zvu5L9NHZARpmHGPcJHvr4GM7AsZCZA3X5ITgDqphRsG4wHrg1REJkoij6uNRMZBqBqAETlqjAJM', '2025-10-28 05:56:02', '2025-10-29 07:43:56'),
-(7, 1, 24, 'EAAGm0PX4ZCpsBAKZCZA...UPDATED', '2025-10-28 14:38:19', '2025-10-28 14:38:19');
+(12, 4, 1, 'EAAljHlwfLMEBP2hasyfnvVeQ7WnIiFOXuZCyktzlZCw8sOyUaZAQZBZBkeiOkKimAjKl9mIqvbuFFZCVKMBrivyemXcZBymgCAa5UZAWwPo7w0ZCczF1pAdhCN0EMOVzZAa9EOD0K2l8E7hKZC6yZBFenaZCFHWXVXl5Uta32xoOdLkVLHFjTvcI61QWbjFujwy8n5znpxv29CdqlvwKDTNcaNcJ6ehaf', '2025-11-01 08:13:22', '2025-11-03 03:08:14');
 
 -- --------------------------------------------------------
 
@@ -851,25 +865,25 @@ ALTER TABLE `achievement_image`
 -- AUTO_INCREMENT for table `announcements`
 --
 ALTER TABLE `announcements`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=68;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=95;
 
 --
 -- AUTO_INCREMENT for table `announcement_datetime`
 --
 ALTER TABLE `announcement_datetime`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=121;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=193;
 
 --
 -- AUTO_INCREMENT for table `announcement_image`
 --
 ALTER TABLE `announcement_image`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=128;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=196;
 
 --
 -- AUTO_INCREMENT for table `authorized_accounts`
 --
 ALTER TABLE `authorized_accounts`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `barangays`
@@ -899,7 +913,7 @@ ALTER TABLE `events`
 -- AUTO_INCREMENT for table `facebook_page_tokens`
 --
 ALTER TABLE `facebook_page_tokens`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `logs`

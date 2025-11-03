@@ -1,9 +1,7 @@
 <?php
-use Firebase\JWT\JWT;
-use Firebase\JWT\JWK;
-use Firebase\JWT\Key;
 require_once __DIR__ . '/Model.php';
 require_once __DIR__ . '/AnnouncementImage.php';
+require_once __DIR__ .  '/AnnouncementDateTime.php';
 require_once __DIR__ . '/BarangayFacebookPages.php';
 require_once __DIR__ . '/FacebookPageTokens.php';
 
@@ -26,6 +24,9 @@ class Announcement extends Model
     protected $who = '';
     protected $why = '';
     protected $where = '';
+    protected $facebook_post_id = '';
+    protected $facebook_object_id = '';
+    
 
     /**
      * Constructor
@@ -129,7 +130,23 @@ class Announcement extends Model
         return $this->is_featured;
     }
 
+    /**
+     * Gets Facebook Post ID
+     * @return string|null
+     */
+    public function getFacebookPostId()
+    {
+        return $this->facebook_post_id;
+    }
 
+    /**
+     * Gets Facebook Object ID
+     * @return string|null
+     */
+    public function getFacebookObjectId()
+    {
+        return $this->facebook_object_id;
+    }
 
 
 
@@ -224,6 +241,23 @@ class Announcement extends Model
         $this->is_featured = $is_featured;
     }
 
+    /**
+     * Sets Facebook Post ID
+     * @param string $facebook_post_id
+     */
+    public function setFacebookPostId($facebook_post_id)
+    {
+        $this->facebook_post_id = $facebook_post_id;
+    }
+
+    /**
+    * Sets Facebook Object ID
+    * @param string $facebook_object_id
+    */
+    public function setFacebookObjectId($facebook_object_id)
+    {
+        $this->facebook_object_id = $facebook_object_id;
+    }
 
 
 
@@ -323,8 +357,8 @@ class Announcement extends Model
     {
         $stmt = $this->getConnection()->prepare("
             INSERT INTO `announcements` 
-            (`barangay_id`, `title`, `description`, `is_featured`, `what`, `who`, `where`, `why`)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            (`barangay_id`, `title`, `description`, `is_featured`, `what`, `who`, `where`, `why`, `facebook_post_id`, `facebook_object_id`)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
 
         if (!$stmt) {
@@ -332,7 +366,7 @@ class Announcement extends Model
         }
 
         $stmt->bind_param(
-            "ississss", 
+            "ississssss", 
             $this->barangay_id,
             $this->title,
             $this->description,
@@ -340,7 +374,9 @@ class Announcement extends Model
             $this->what,
             $this->who,
             $this->where,
-            $this->why
+            $this->why,
+            $this->facebook_post_id,
+            $this->facebook_object_id
         );
 
         $stmt->execute();
@@ -372,6 +408,8 @@ class Announcement extends Model
                 `who` = ?, 
                 `where` = ?, 
                 `why` = ?, 
+                `facebook_post_id` = ?,
+                `facebook_object_id` = ?,
                 `thumbnail_id` = ?
             WHERE `id` = ?
         ");
@@ -381,7 +419,7 @@ class Announcement extends Model
         }
 
         $stmt->bind_param(
-            "ississssii",
+            "ississssssii",
             $this->barangay_id,
             $this->title,
             $this->description,
@@ -390,6 +428,8 @@ class Announcement extends Model
             $this->who,
             $this->where,
             $this->why,
+            $this->facebook_post_id,
+            $this->facebook_object_id,
             $this->thumbnail_id,
             $this->id
         );
@@ -421,6 +461,141 @@ class Announcement extends Model
         $stmt->bind_param("i", $this->id);
         $stmt->execute();
         return $stmt->affected_rows > 0;
+    }
+
+
+    // -------------------- FACEBOOK CROSS PLATOFORM POSTING CRUD OPERATIONS --------------------
+  
+    /**
+     * Create a Facebook Post based on the Announcement Object
+     * Returns id and post_id of the Facebook post
+     * @throws Exception
+     */
+    public function uploadInFacebook($page_access_token, $barangayFacebookPageID)
+    {
+        // Convert title to uppercase and bold (using Unicode bold text)
+        $boldTitle = $this->convertToBoldUnicode(mb_strtoupper($this->title));
+
+        // Fetch all date-time entries
+        $datetimes = $this->getDateTimes();
+
+        // Build the "When" section
+        $whenText = '';
+        if (!empty($datetimes)) {
+            foreach ($datetimes as $dt) {
+                $date = date("F j, Y", strtotime($dt['date']));
+                $start = date("g:ia", strtotime($dt['start_time']));
+                $end   = date("g:ia", strtotime($dt['end_time']));
+                $whenText .= "  \u{2022} $date – $start to $end\n";
+            }
+        } else {
+            $whenText = "To be announced\n";
+        }
+
+        // Format the Facebook Caption
+        $message = <<<EOT
+        $boldTitle
+
+        "{$this->description}"
+
+        ❓ {$this->convertToBoldUnicode("What:")} {$this->what}
+
+        📍 {$this->convertToBoldUnicode("Where:")} {$this->where}
+
+        📅 {$this->convertToBoldUnicode("When:")}
+        $whenText
+
+        👤 {$this->convertToBoldUnicode("Who:")} {$this->who}
+
+        💡 {$this->convertToBoldUnicode("Why:")} {$this->why}
+
+        #youthTesting
+        EOT;
+
+
+        // === Step 1: Get all announcement images ===
+        $announcementImagesPath = __DIR__ . "/../../public/Announcements/";
+        $announcementImages = AnnouncementImage::getByAnnouncement($this->getId(), true); // assuming returns array of filenames
+
+        $uploadedPhotoIds = [];
+
+        // === Step 2: Upload each photo as unpublished ===
+        foreach ($announcementImages as $img) {
+            $photoPath = $announcementImagesPath . $img['name']; 
+
+            if (!file_exists($photoPath)) {
+                continue;
+            }
+
+            $ch = curl_init();
+            $data = [
+                'access_token' => $page_access_token,
+                'published' => 'false',
+                'source' => new CURLFile($photoPath)
+            ];
+
+            curl_setopt($ch, CURLOPT_URL, "https://graph.facebook.com/v24.0/{$barangayFacebookPageID}/photos");
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+            $response = curl_exec($ch);
+            $result = json_decode($response, true);
+            curl_close($ch);
+
+            if (isset($result['id'])) {
+                $uploadedPhotoIds[] = $result['id'];
+            }
+        }
+
+        // === Step 3: Create a post and attach all photos ===
+        $data = [
+            'message' => $message,
+            'access_token' => $page_access_token
+        ];
+
+        foreach ($uploadedPhotoIds as $i => $photoId) {
+            $data["attached_media[$i]"] = json_encode(['media_fbid' => $photoId]);
+        }
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, "https://graph.facebook.com/v24.0/{$barangayFacebookPageID}/feed");
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+        $response = curl_exec($ch);
+
+        if (curl_errno($ch)) {
+            throw new Exception("Facebook API Error: " . curl_error($ch));
+        }
+
+        curl_close($ch);
+
+        // Return the final GraphAPI response
+        return json_decode($response, true);
+    }
+
+    /**
+     * Delete a Facebook Post based of the Announcement Object
+     * @return mixed
+     * @throws Exception
+     */
+    function deleteFacebookPost($postId, $pageAccessToken) {
+        $graphUrl = "https://graph.facebook.com/v24.0/{$postId}?access_token={$pageAccessToken}";
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $graphUrl);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+        $response = curl_exec($ch);
+        if (curl_errno($ch)) {
+            echo json_encode(["error" => curl_error($ch)]);
+        } else {
+            return json_decode($response, true); // Returns {"success": true} if deleted
+        }
+        curl_close($ch);
     }
 
 
@@ -748,72 +923,16 @@ class Announcement extends Model
         return $announcements;
     }
 
-    /**
-     * Get featured announcements
-     * @throws Exception
-     */
-    public function uploadToFacebook() {
-        $jwt = $_COOKIE['jwt'];
-        $page_access_token = null;
-
-        try {
-            $decoded = JWT::decode($jwt, new Key($GLOBALS['secret_key'], 'HS256'));
-            $account = AuthorizedAccount::findBy('provider_user_id', $decoded->fb_user_id);
-            $barangay = Barangay::findBy('id', $decoded->barangayId);
-            $barangayFacebookPage = BarangayFacebookPages::findBy('barangay_id', $barangay->getId());
-
-            $page_access_token = FacebookPageTokens::findByComposite([
-                'authorized_account_id' => $account->getId(),
-                'barangay_facebook_page_id' => $barangayFacebookPage->getId()
-            ]);
-
-        } catch (Exception $e) {
-            http_response_code(401);
-            echo json_encode(["error" => "Unauthorized"]);
-            exit;
-        }
-
-        // ✅ At this point, you have a valid $page_access_token->getAccessToken()
-
-        $message = "Project" . $this->title . "This is a test post from the Barangay system!";
-        $photoPath = __DIR__ . "/../../public/Announcements/no-avatar.png"; // optional
-        if (!file_exists($photoPath)) {
-            echo json_encode(["error" => "File not found: $photoPath"]);
-            exit;
-        }
-        if (!is_readable($photoPath)) {
-            echo json_encode(["error" => "File not readable: $photoPath"]);
-            exit;
-        }
-
-        $graphUrl = "https://graph.facebook.com/v24.0/{$barangayFacebookPage->getPageId()}/photos";
-
-        $ch = curl_init();
-        $data = [
-            'message' => $message,
-            'access_token' => $page_access_token->getPageAccessToken(),
-            'source' => new CURLFile($photoPath)
-        ];
-
-        curl_setopt($ch, CURLOPT_URL, $graphUrl);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_VERBOSE, true);
-
-
-        $response = curl_exec($ch);
-        if (curl_errno($ch)) {
-            echo json_encode(["error" => curl_error($ch)]);
-        } else {
-            echo $response;
-        }
-        curl_close($ch);
+    public function getDateTimes() {
+        $datetime = AnnouncementDatetime::getByAnnouncement($this->getId(), true);
+        return $datetime;
     }
 
 
 
-    
+
+
+
 
     // -------------------- HELPER FUNCTIONS --------------------
 
@@ -972,5 +1091,9 @@ class Announcement extends Model
 
         return $stmt->execute();
     }
-
+    private function convertToBoldUnicode($text) {
+        $normal = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+        $bold   = '𝗔𝗕𝗖𝗗𝗘𝗙𝗚𝗛𝗜𝗝𝗞𝗟𝗠𝗡𝗢𝗣𝗤𝗥𝗦𝗧𝗨𝗩𝗪𝗫𝗬𝗭𝗮𝗯𝗰𝗱𝗲𝗳𝗴𝗵𝗶𝗷𝗸𝗹𝗺𝗻𝗼𝗽𝗾𝗿𝘀𝘁𝘂𝘃𝘄𝘅𝘆𝘇';
+        return strtr($text, array_combine(preg_split('//u', $normal, -1, PREG_SPLIT_NO_EMPTY), preg_split('//u', $bold, -1, PREG_SPLIT_NO_EMPTY)));
+    }
 }
