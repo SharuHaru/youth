@@ -87,15 +87,33 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 function authorizeRequest() {
     if (!isset($_COOKIE['jwt'])) {
-        returnError("Unauthorized", 401);
+        returnError("Unauthorized: Missing JWT", 401);
     }
 
     try {
-        $jwt = $_COOKIE['jwt'];
-        $decoded = JWT::decode($jwt, new Key($GLOBALS['secret_key'],'HS256'));  
-        return $decoded; // return user info (payload)
+        $decoded = JWT::decode($_COOKIE['jwt'], new Key($GLOBALS['secret_key'], 'HS256'));
+        
+        // Expiry validation
+        if (isset($decoded->exp) && $decoded->exp < time()) {
+            returnError("Session expired. Please log in again.", 401);
+        }
+
+        $account = AuthorizedAccount::findBy('provider_user_id', $decoded->fb_user_id);
+        $barangay = Barangay::findBy('id', $decoded->barangayId);
+
+        if (!$account || !$barangay) {
+            returnError("Unauthorized: Invalid account or barangay.", 401);
+        }
+
+        $barangayFacebookPage = BarangayFacebookPages::findBy('barangay_id', $barangay->getId());
+        $page_access_token = FacebookPageTokens::findByComposite([
+            'authorized_account_id' => $account->getId(),
+            'barangay_facebook_page_id' => $barangayFacebookPage->getId()
+        ]);
+
+        return compact('decoded', 'account', 'barangay', 'barangayFacebookPage', 'page_access_token');
     } catch (Exception $e) {
-        returnError("Invalid Token", 401);
+        returnError("Unauthorized: Invalid JWT token.", 401);
     }
 }
 
