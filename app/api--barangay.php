@@ -1,7 +1,12 @@
 <?php
 
+use League\OAuth2\Client\Provider\Facebook;
 /** Check Guard Constant */
 if (!defined('__BASE')) { exit(); }
+
+use Firebase\JWT\JWT;
+use Firebase\JWT\JWK;
+use Firebase\JWT\Key;
 
 /** imports */
 require_once __DIR__ . '/models/Barangay.php';
@@ -18,7 +23,7 @@ require_once __DIR__ . '/models/AuthorizedAccount.php';
 $action = $_GET['a'] ?? '';
 
 
-// Public API
+// -------------------- PUBLIC API --------------------
 if($action === 'fetchBarangays')
 {
     $clusters = new Cluster();
@@ -117,7 +122,11 @@ else if ($action === 'available-year-months') {
 
 
 
-// Private API
+// -------------------- PRIVATE API --------------------
+
+
+// Announcement API
+
 
 else if($action === 'barangay-dashboard') {
     authorizeRequest(); // Ensure the user is authorized
@@ -127,8 +136,9 @@ else if($action === 'barangay-dashboard') {
 }
 
 else if ($action === 'add-announcement') {
-    authorizeRequest(); // Ensure the user is authorized
-
+    // Ensure the user is authorized
+    $context = authorizeRequest();
+  
 
     // Check if Announcement Info Exist
     if (empty($_POST['announcementInfo'])) {
@@ -238,7 +248,7 @@ else if ($action === 'add-announcement') {
                 $announcement->updateThumbnail();
             }
 
-            // ---  HANDLE CREATING DATETIMES FOR THE ANNOUNCEMENT  ---
+            // ---  HANDLE CREATING DATETIMES FOR THE ANNOUNCEMENT ---
             $successfulDatetimes = 0;
             foreach ($announcementInfo['datetimes'] as $dt) {
                 $start = strlen($dt['start']) === 5 ? $dt['start'] . ':00' : $dt['start'];
@@ -252,6 +262,13 @@ else if ($action === 'add-announcement') {
 
                 if ($adt->insert()) $successfulDatetimes++;
             }
+
+            // Upload the newly Created Announcement to Facebook
+            $facebookUploadResponse = $announcement->uploadInFacebook($context['page_access_token']->getPageAccessToken(), $context['barangayFacebookPage']->getPageId()); 
+            print_r($facebookUploadResponse);
+            $announcement->setFacebookPostId($facebookUploadResponse['post_id'] ?? null);
+            $announcement->setFacebookObjectId($facebookUploadResponse['id'] ?? null);
+            $announcement->update();
 
             returnSuccess([
                 'message' => 'Announcement added successfully.',
@@ -269,8 +286,6 @@ else if ($action === 'add-announcement') {
     }
 }
 
-
-// In the Update Announcement API there are 3 things that you need to update the announcement details, announcement Date Times and Announcement Images
 else if ($action === 'update-announcement') {
     authorizeRequest(); // Ensure the user is authorized
     print_r($_POST['announcementInfo']);
@@ -411,6 +426,7 @@ else if ($action === 'update-announcement') {
             : [];
 
         if ($announcement->updateWithDatetimes($datetimes)) {
+            print_r($announcement->getDateTimes());
             returnSuccess([
                 'message' => 'Announcement updated successfully.',
                 'announcement' => $announcement->getAssoc(true),
@@ -428,9 +444,8 @@ else if ($action === 'update-announcement') {
     }
 }
 
-
 else if ($action === 'delete-announcement') {
-    authorizeRequest(); // Ensure the user is authorized
+    $context = authorizeRequest(); // Ensure the user is authorized
 
     // Ensure the announcement ID is provided
     if (!isset($_POST['id'])) {
@@ -446,8 +461,16 @@ else if ($action === 'delete-announcement') {
         returnError("No announcement found with ID $announcementId", 404);
     }
     
+
+    // Delete Annnouncement on Facebook
+    $deleteOnFacebookResponse = $announcement->deleteFacebookPost(
+        $announcement->getFacebookObjectId(), 
+        $context['page_access_token']->getPageAccessToken()
+    );
+    
     // Attempt to delete the announcement
-    if ($announcement->delete()) {
+    if ($deleteOnFacebookResponse['success'] && $announcement->delete())
+    {
         returnSuccess([
             'message' => 'Announcement deleted successfully.'
         ]);
@@ -456,6 +479,7 @@ else if ($action === 'delete-announcement') {
     }
 }
 
+// Barangay Settings API
 
 else if ($action === 'change-password') {
     authorizeRequest();

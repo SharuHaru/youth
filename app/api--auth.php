@@ -229,6 +229,8 @@ else if ($action === 'process-facebook')
     $pages = json_decode(file_get_contents($pagesUrl), true);
     
 
+
+    // 6.1. Create the Authorized Account if not exists
     if(!$account) {
         // Create an Authorized Account if not exists
         $account = new AuthorizedAccount();
@@ -261,9 +263,8 @@ else if ($action === 'process-facebook')
             $facebookPageToken->insert();
         }
     }
-    else 
-    {
-        // 6. Set the long-lived access token and Expiry
+    // 6.2 Set the long-lived access token and Expiry
+    else {   
         $account->setAccessToken($accessToken);
         $account->setTokenExpiry(date('Y-m-d H:i:s' ,$expiry['data']['data_access_expires_at']));
         $account->update();
@@ -274,8 +275,6 @@ else if ($action === 'process-facebook')
         if ($barangayFacebookPage) {
             // Compare the Page IDs
             if ($pages['data'][0]['id'] === $barangayFacebookPage->getPageId()) {
-                // Page IDs match
-
                 // Find the the page access token that is under the barangay_page and authorized_account
                 $facebookPageToken = FacebookPageTokens::findByComposite([
                     'authorized_account_id' => $account->getId(),
@@ -288,13 +287,9 @@ else if ($action === 'process-facebook')
                 // Page IDs do not match
                 echo "Facebook Page ID does not match the stored Barangay Facebook Page ID.";
             }
-        } else {
-            
-            // If no barangay facebook page found then 
-            // Check if the facebook page is in business portfolio and a true facebook page of the barangay of the authorized account
-            // Then create a row of that barangay_facebook_page of that barangay
-        }
+        } 
     }
+    
 
     // 7. Issue your own JWT/cookie
     $barangay = $account->getBarangay();
