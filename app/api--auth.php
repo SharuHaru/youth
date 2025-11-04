@@ -218,7 +218,7 @@ else if ($action === 'process-facebook')
 
 
     // 5. Find the Account in the Database
-    $facebookId = $user->getId();
+    $facebookId = $user->getId() ?  $user->getId() : null;
     $email = $data['email'] ?? null;
     $account = AuthorizedAccount::findBy('provider_user_id', $facebookId);
     print_r($data);

@@ -454,7 +454,6 @@ class Announcement extends Model
     {
         // Delete associated datetimes first
         require_once __DIR__ . '/AnnouncementDatetime.php';
-        AnnouncementDatetime::deleteByAnnouncement($this->getId());
         
         // Delete the announcement
         $stmt = $this->getConnection()->prepare("DELETE FROM `" . self::$table . "` WHERE `id` = ?");
@@ -572,8 +571,30 @@ class Announcement extends Model
 
         curl_close($ch);
 
-        // Return the final GraphAPI response
-        return json_decode($response, true);
+        // Decode the final Graph API response
+        $result = json_decode($response, true);
+
+        if (isset($result['id'])) {
+            // The ID looks like "851109194751372_122104860351077869"
+            $facebook_post_id = $result['id'];
+
+            // Split into page_id and post_id
+            [$facebook_page_id, $facebook_object_id] = explode('_', $facebook_post_id);
+
+            // Optional: store them separately in your database
+            $this->setFacebookPostId($facebook_post_id);
+            $this->setFacebookObjectId($facebook_object_id);
+            $this->update();
+
+            // You can also return all of them
+            return [
+                'success' => true,
+                'facebook_post_id' => $facebook_post_id,
+                'facebook_object_id' => $facebook_object_id,
+            ];
+        } else {
+            throw new Exception("Unexpected response from Facebook: " . json_encode($result));
+        }
     }
 
     /**
@@ -591,6 +612,7 @@ class Announcement extends Model
 
         $response = curl_exec($ch);
         if (curl_errno($ch)) {
+            returnError("Facebook API Error: " . curl_error($ch), 500);
             echo json_encode(["error" => curl_error($ch)]);
         } else {
             return json_decode($response, true); // Returns {"success": true} if deleted
