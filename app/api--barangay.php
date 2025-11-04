@@ -253,7 +253,7 @@ else if ($action === 'add-announcement') {
 
 
             // --- UPLOAD THE NEWLY CREATED ANNOUNCEMENT TO FACEBOOK ---
-            $facebookUploadResponse = $announcement->uploadInFacebook($context['page_access_token']->getPageAccessToken(), $context['barangayFacebookPage']->getPageId()); 
+            $facebookUploadResponse = $announcement->createFacebookPost($context['page_access_token']->getPageAccessToken(), $context['barangayFacebookPage']->getPageId()); 
             print_r($facebookUploadResponse);
             
             returnSuccess([
@@ -276,8 +276,8 @@ else if ($action === 'add-announcement') {
 }
 
 else if ($action === 'update-announcement') {
-    authorizeRequest(); // Ensure the user is authorized
-    print_r($_POST['announcementInfo']);
+    // 1. Ensure the user is authorized and retrieve context (including tokens)
+    $context = authorizeRequest(); 
 
     // Check if Announcement Info Exist
     if (!isset($_POST['announcementInfo'])) {
@@ -312,7 +312,7 @@ else if ($action === 'update-announcement') {
         }
 
 
-        // ✅ Update announcement fields
+        // ✅ Update announcement fields (DATABASE UPDATE)
         $announcement->setBarangayId($announcementInfo['barangay_id']);
         $announcement->setTitle($announcementInfo['title']);
         $announcement->setDescription($announcementInfo['description']);
@@ -335,7 +335,8 @@ else if ($action === 'update-announcement') {
 
         // 2. Get the Images from the payload
         $incomingImages = $announcementInfo['images'] ?? [];
-        $incomingIds = array_filter(array_map(fn($img) => $img['id'] ?? null, $incomingImages));
+        // Extract existing IDs from the incoming payload (for images to keep)
+        $incomingIds = array_filter(array_map(fn($img) => $img['id'] ?? null, $incomingImages)); 
 
 
         // 3. Delete images in the database that is not in payload
@@ -377,45 +378,65 @@ else if ($action === 'update-announcement') {
                                 }
                             }
                         }
-
-
-
                     } else {
                         error_log("❌ Failed to upload file: " . $_FILES['files']['name'][$i]);
                     }
                 }
             }
+        }
 
-            // Updating the Thumbnail ID of the Announcement in the Database
-            $thumbnailImageId = null;
-            if (!empty($announcementInfo['thumbnail_tempId']) && isset($tempIdMap[$announcementInfo['thumbnail_tempId']])) {
-                $thumbnailImageId = $tempIdMap[$announcementInfo['thumbnail_tempId']];
-                print_r($tempIdMap);
-            } elseif (!empty($announcementInfo['thumbnail_id'])) {
-                $thumbnailImageId = $announcementInfo['thumbnail_id']; // existing image
-            } else {
-                // ✅ Fallback: first available image (newly uploaded OR existing)
-                if (!empty($tempIdMap)) {
-                    $thumbnailImageId = reset($tempIdMap); // first new upload
-                } elseif (!empty($incomingIds)) {
-                    $thumbnailImageId = reset($incomingIds); // first kept existing image
-                }
-            }
-
-
-            if ($thumbnailImageId !== null) {
-                $announcement->setThumbnailId($thumbnailImageId);
-                $announcement->updateThumbnail();
+        // Updating the Thumbnail ID of the Announcement in the Database
+        $thumbnailImageId = null;
+        if (!empty($announcementInfo['thumbnail_tempId']) && isset($tempIdMap[$announcementInfo['thumbnail_tempId']])) {
+            $thumbnailImageId = $tempIdMap[$announcementInfo['thumbnail_tempId']];
+            print_r($tempIdMap);
+        } elseif (!empty($announcementInfo['thumbnail_id'])) {
+            $thumbnailImageId = $announcementInfo['thumbnail_id']; // existing image
+        } else {
+            // ✅ Fallback: first available image (newly uploaded OR existing)
+            if (!empty($tempIdMap)) {
+                $thumbnailImageId = reset($tempIdMap); // first new upload
+            } elseif (!empty($incomingIds)) {
+                $thumbnailImageId = reset($incomingIds); // first kept existing image
             }
         }
 
-        // --- ANNOUNCEMENT DATETIMES HANDLING ---
+
+        if ($thumbnailImageId !== null) {
+            $announcement->setThumbnailId($thumbnailImageId);
+            $announcement->updateThumbnail();
+        }
+
+        // --- ANNOUNCEMENT DATETIMES HANDLING (DB) ---
         $datetimes = isset($announcementInfo['datetimes']) && is_array($announcementInfo['datetimes'])
             ? $announcementInfo['datetimes']
             : [];
 
-        if ($announcement->updateWithDatetimes($datetimes)) {
-            print_r($announcement->getDateTimes());
+        if ($announcement->updateWithDatetimes($datetimes) && $announcement->update()) { // Ensure the main announcement fields are saved
+            
+            // --- FACEBOOK UPDATE ---
+            $facebookPostId = $announcement->getFacebookPostId();
+            if ($facebookPostId) {
+                try {
+                    // This calls the method you created in the previous turn
+                    $facebookUpdateResponse = $announcement->updateFacebookPost(
+                        $context['page_access_token']->getPageAccessToken(), 
+                        $facebookPostId
+                    );
+                    
+                    if (getenv('APP_DEBUG')) {
+                        error_log("Facebook Update Success: " . print_r($facebookUpdateResponse, true));
+                    }
+                    
+                } catch (Exception $e) {
+                    // Log the Facebook update error but do not halt the entire process
+                    // if the local database update was successful.
+                    error_log("Facebook post update failed for post $facebookPostId: " . $e->getMessage());
+                }
+            }
+
+
+            // --- SUCCESS RESPONSE ---
             returnSuccess([
                 'message' => 'Announcement updated successfully.',
                 'announcement' => $announcement->getAssoc(true),
