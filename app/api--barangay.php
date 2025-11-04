@@ -145,6 +145,7 @@ else if ($action === 'add-announcement') {
         returnError('Invalid announcement information received.', 400);
     }
 
+    // Check the announcementInfo from frontend is an array and if not convert it
     $announcementInfo = is_array($_POST['announcementInfo']) 
         ? $_POST['announcementInfo'] 
         : json_decode($_POST['announcementInfo'], true);
@@ -161,20 +162,8 @@ else if ($action === 'add-announcement') {
         }
     }
 
-    // ✅ Datetimes required
-    if (!isset($announcementInfo['datetimes']) || !is_array($announcementInfo['datetimes']) || empty($announcementInfo['datetimes'])) {
-        returnError('At least one datetime is required for the announcement.', 400);
-    }
-    foreach ($announcementInfo['datetimes'] as $index => $datetime) {
-        if (empty($datetime['date'])) returnError("Date is required for datetime entry " . ($index + 1) . ".", 400);
-        if (empty($datetime['start'])) returnError("Start time is required for datetime entry " . ($index + 1) . ".", 400);
-        if (empty($datetime['end'])) returnError("End time is required for datetime entry " . ($index + 1) . ".", 400);
-    }
-
     $announcementInfo['is_featured'] = $announcementInfo['is_featured'] ?? 0;
 
-
-     
     try {
         // ---  CREATE THE MAIN ANNOUNCEMENT  ---
         $announcement = new Announcement();
@@ -187,15 +176,12 @@ else if ($action === 'add-announcement') {
         if (isset($announcementInfo['where'])) $announcement->setWhere($announcementInfo['where']);
         if (isset($announcementInfo['why'])) $announcement->setWhy($announcementInfo['why']);
 
-
-
-
         // --- HANDLE CREATING ANNOUNCEMENT IMAGES ---
         if ($announcement->insert()) {
             $announcementId = $announcement->getId();
             $thumbnailImageId = null;
-
             $uploadDir = __DIR__ . '/../public/Announcements/';
+
             if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
 
             // ✅ Map tempIds to actual DB IDs
@@ -250,6 +236,7 @@ else if ($action === 'add-announcement') {
 
             // ---  HANDLE CREATING DATETIMES FOR THE ANNOUNCEMENT ---
             $successfulDatetimes = 0;
+
             foreach ($announcementInfo['datetimes'] as $dt) {
                 $start = strlen($dt['start']) === 5 ? $dt['start'] . ':00' : $dt['start'];
                 $end   = strlen($dt['end']) === 5   ? $dt['end']   . ':00' : $dt['end'];
@@ -263,24 +250,26 @@ else if ($action === 'add-announcement') {
                 if ($adt->insert()) $successfulDatetimes++;
             }
 
-            // Upload the newly Created Announcement to Facebook
+
+
+            // --- UPLOAD THE NEWLY CREATED ANNOUNCEMENT TO FACEBOOK ---
             $facebookUploadResponse = $announcement->uploadInFacebook($context['page_access_token']->getPageAccessToken(), $context['barangayFacebookPage']->getPageId()); 
             print_r($facebookUploadResponse);
-            $announcement->setFacebookPostId($facebookUploadResponse['post_id'] ?? null);
-            $announcement->setFacebookObjectId($facebookUploadResponse['id'] ?? null);
-            $announcement->update();
-
+            
             returnSuccess([
                 'message' => 'Announcement added successfully.',
                 'announcement' => $announcement->getAssoc(true),
                 'datetimes_added' => $successfulDatetimes,
                 'images' => AnnouncementImage::getByAnnouncement($announcementId, true)
             ]);
-        } else {
+        } 
+        else {
             returnError("Announcement insertion failed.", 500);
         }
 
     } catch (Exception $e) {
+        $announcement->deleteFacebookPost($announcement->getFacebookObjectId(), $context['page_access_token']->getPageAccessToken());
+        $announcement->delete();
         error_log("Announcement add error: " . $e->getMessage());
         returnError("An error occurred while adding the announcement: " . $e->getMessage(), 500);
     }
@@ -445,39 +434,46 @@ else if ($action === 'update-announcement') {
 }
 
 else if ($action === 'delete-announcement') {
-    $context = authorizeRequest(); // Ensure the user is authorized
+    try {
+        $context = authorizeRequest();
 
-    // Ensure the announcement ID is provided
-    if (!isset($_POST['id'])) {
-        returnError('Announcement ID is required.', 400);
-    }
-    
-    $announcementId = $_POST['id'];
-    
-    // Fetch the announcement from the database using the provided ID
-    $announcement = Announcement::findBy('id', $announcementId);
-    
-    if (!$announcement) {
-        returnError("No announcement found with ID $announcementId", 404);
-    }
-    
+        if (!isset($_POST['id'])) {
+            returnError('Announcement ID is required.', 400);
+        }
 
-    // Delete Annnouncement on Facebook
-    $deleteOnFacebookResponse = $announcement->deleteFacebookPost(
-        $announcement->getFacebookObjectId(), 
-        $context['page_access_token']->getPageAccessToken()
-    );
-    
-    // Attempt to delete the announcement
-    if ($deleteOnFacebookResponse['success'] && $announcement->delete())
-    {
-        returnSuccess([
-            'message' => 'Announcement deleted successfully.'
-        ]);
-    } else {
-        returnError("Failed to delete announcement. No changes detected or an error occurred.", 500);
+        $announcementId = intval($_POST['id']);
+        $announcement = Announcement::findBy('id', $announcementId);
+
+        if (!$announcement) {
+            returnError("No announcement found with ID $announcementId", 404);
+        }
+
+        $deleteOnFacebookResponse = ['success' => false];
+
+        if ($announcement->getFacebookPostId()) {
+            $deleteOnFacebookResponse = $announcement->deleteFacebookPost(
+                $announcement->getFacebookPostId(),
+                $context['page_access_token']->getPageAccessToken()
+            );
+        }
+
+        // Log FB deletion result if debugging
+        if (getenv('APP_DEBUG')) {
+            error_log(print_r($deleteOnFacebookResponse, true));
+        }
+
+        // Delete from local database
+        if ($announcement->delete()) {
+            returnSuccess(['message' => 'Announcement deleted successfully.']);
+        } else {
+            returnError('Failed to delete announcement record.', 500);
+        }
+
+    } catch (Exception $e) {
+        returnError('Server error: ' . $e->getMessage(), 500);
     }
 }
+
 
 // Barangay Settings API
 
