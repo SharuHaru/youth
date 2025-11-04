@@ -92,30 +92,44 @@ function authorizeRequest() {
 
     try {
         $decoded = JWT::decode($_COOKIE['jwt'], new Key($GLOBALS['secret_key'], 'HS256'));
-        
-        // Expiry validation
+
+        // 🔒 Validate token expiry
         if (isset($decoded->exp) && $decoded->exp < time()) {
             returnError("Session expired. Please log in again.", 401);
         }
 
-        $account = AuthorizedAccount::findBy('provider_user_id', $decoded->fb_user_id);
+        // 🧾 Barangay is required
         $barangay = Barangay::findBy('id', $decoded->barangayId);
-
-        if (!$account || !$barangay) {
-            returnError("Unauthorized: Invalid account or barangay.", 401);
+        if (!$barangay) {
+            returnError("Unauthorized: Invalid barangay.", 401);
         }
 
-        $barangayFacebookPage = BarangayFacebookPages::findBy('barangay_id', $barangay->getId());
-        $page_access_token = FacebookPageTokens::findByComposite([
-            'authorized_account_id' => $account->getId(),
-            'barangay_facebook_page_id' => $barangayFacebookPage->getId()
-        ]);
+        // 🧍 Account may be NULL if login not via OAuth
+        $account = null;
+        if (!empty($decoded->fb_user_id)) {
+            $account = AuthorizedAccount::findBy('provider_user_id', $decoded->fb_user_id);
+        }
 
+        // 📄 Try to fetch barangay Facebook page (if it exists)
+        $barangayFacebookPage = BarangayFacebookPages::findBy('barangay_id', $barangay->getId());
+
+        // 🔑 Only fetch page access token if both account and page exist
+        $page_access_token = null;
+        if ($account && $barangayFacebookPage) {
+            $page_access_token = FacebookPageTokens::findByComposite([
+                'authorized_account_id' => $account->getId(),
+                'barangay_facebook_page_id' => $barangayFacebookPage->getId()
+            ]);
+        }
+
+        // ✅ Return context — account, page, and token can be null
         return compact('decoded', 'account', 'barangay', 'barangayFacebookPage', 'page_access_token');
+
     } catch (Exception $e) {
         returnError("Unauthorized: Invalid JWT token.", 401);
     }
 }
+
 
 
 /**
