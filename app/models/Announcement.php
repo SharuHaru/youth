@@ -470,7 +470,7 @@ class Announcement extends Model
      * Returns id and post_id of the Facebook post
      * @throws Exception
      */
-    public function uploadInFacebook($page_access_token, $barangayFacebookPageID)
+    public function createFacebookPost($page_access_token, $barangayFacebookPageID)
     {
         // Convert title to uppercase and bold (using Unicode bold text)
         $boldTitle = $this->convertToBoldUnicode(mb_strtoupper($this->title));
@@ -594,6 +594,133 @@ class Announcement extends Model
             ];
         } else {
             throw new Exception("Unexpected response from Facebook: " . json_encode($result));
+        }
+    }
+
+    /**
+     * Update a Facebook Post's message and attached photos based on the Announcement Object.
+     * This method re-uploads all current photos and updates the post with the new photo IDs.
+     * * @param string $page_access_token The access token for the page.
+     * @param string $facebook_post_id The full post ID (e.g., 'page_id_post_object_id').
+     * @throws Exception
+     */
+    public function updateFacebookPost($page_access_token, $facebook_post_id)
+    {
+        // --- 1. Re-generate the Message/Caption (Same as in uploadInFacebook) ---
+        
+        // Convert title to uppercase and bold (using Unicode bold text)
+        $boldTitle = $this->convertToBoldUnicode(mb_strtoupper($this->title));
+
+        // Fetch all date-time entries
+        $datetimes = $this->getDateTimes();
+
+        // Build the "When" section
+        $whenText = '';
+        if (!empty($datetimes)) {
+            foreach ($datetimes as $dt) {
+                $date = date("F j, Y", strtotime($dt['date']));
+                $start = date("g:ia", strtotime($dt['start_time']));
+                $end   = date("g:ia", strtotime($dt['end_time']));
+                $whenText .= "      " . "\u{2022} $date – $start to $end\n";
+            }
+        } else {
+            $whenText = "To be announced\n";
+        }
+
+        // Format the new Facebook Caption
+        $message = <<<EOT
+        $boldTitle
+
+        "{$this->description}"
+
+        ❓ {$this->convertToBoldUnicode("What:")} {$this->what}
+
+        📍 {$this->convertToBoldUnicode("Where:")} {$this->where}
+
+        📅 {$this->convertToBoldUnicode("When:")}
+        $whenText
+
+        👤 {$this->convertToBoldUnicode("Who:")} {$this->who}
+
+        💡 {$this->convertToBoldUnicode("Why:")} {$this->why}
+
+        #youthTesting
+        EOT;
+
+
+        // --- 2. Re-upload all photos as unpublished to get new media_fbids ---
+        
+        $announcementImagesPath = __DIR__ . "/../../public/Announcements/";
+        $announcementImages = AnnouncementImage::getByAnnouncement($this->getId(), true); 
+        $uploadedPhotoIds = [];
+        $barangayFacebookPageID = explode('_', $facebook_post_id)[0]; // Extract Page ID from the full post ID
+
+        foreach ($announcementImages as $img) {
+            $photoPath = $announcementImagesPath . $img['name']; 
+            
+            if (!file_exists($photoPath)) {
+                continue;
+            }
+
+            $ch = curl_init();
+            $data = [
+                'access_token' => $page_access_token,
+                'published' => 'false',
+                'source' => new CURLFile($photoPath)
+            ];
+
+            // Use the same page_id as the original post for the upload
+            curl_setopt($ch, CURLOPT_URL, "https://graph.facebook.com/v24.0/{$barangayFacebookPageID}/photos");
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+            $response = curl_exec($ch);
+            $result = json_decode($response, true);
+            curl_close($ch);
+
+            if (isset($result['id'])) {
+                $uploadedPhotoIds[] = $result['id'];
+            }
+        }
+        
+        // --- 3. Update the existing post with the new message and attached media ---
+        
+        $data = [
+            'message' => $message,
+            'access_token' => $page_access_token
+        ];
+
+        // Attach the newly uploaded, unpublished media_fbids
+        foreach ($uploadedPhotoIds as $i => $photoId) {
+            $data["attached_media[$i]"] = json_encode(['media_fbid' => $photoId]);
+        }
+        
+        // The endpoint for updating an existing post is the post ID itself (using POST method)
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, "https://graph.facebook.com/v24.0/{$facebook_post_id}");
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+        $response = curl_exec($ch);
+
+        if (curl_errno($ch)) {
+            throw new Exception("Facebook API Error on Update: " . curl_error($ch));
+        }
+
+        curl_close($ch);
+
+        // Decode the final Graph API response
+        $result = json_decode($response, true);
+
+        if (isset($result['success']) && $result['success'] === true) {
+            return [
+                'success' => true,
+                'facebook_post_id' => $facebook_post_id,
+            ];
+        } else {
+            throw new Exception("Unexpected response from Facebook during update: " . json_encode($result));
         }
     }
 
