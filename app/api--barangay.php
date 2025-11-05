@@ -138,9 +138,10 @@ else if($action === 'barangay-dashboard') {
 else if ($action === 'add-announcement') {
     // Ensure the user is authorized
     $context = authorizeRequest();
-  
 
-    // Check if Announcement Info Exist
+    // ---  REQUEST DATA CHECKING  ---
+
+    // Check if announcementInfo request data exist
     if (empty($_POST['announcementInfo'])) {
         returnError('Invalid announcement information received.', 400);
     }
@@ -154,15 +155,13 @@ else if ($action === 'add-announcement') {
         returnError('Invalid announcement information format.', 400);
     }
 
-    // ✅ Required fields
+    // Chech the Required Fields (barangay_id, title, description)
     $requiredFields = ['barangay_id', 'title', 'description'];
     foreach ($requiredFields as $field) {
         if (empty($announcementInfo[$field]) || trim($announcementInfo[$field]) === '') {
             returnError(ucfirst(str_replace('_', ' ', $field)) . ' is required.', 400);
         }
     }
-
-    $announcementInfo['is_featured'] = $announcementInfo['is_featured'] ?? 0;
 
     try {
         // ---  CREATE THE MAIN ANNOUNCEMENT  ---
@@ -254,7 +253,6 @@ else if ($action === 'add-announcement') {
 
             // --- UPLOAD THE NEWLY CREATED ANNOUNCEMENT TO FACEBOOK ---
             $facebookUploadResponse = $announcement->createFacebookPost($context['page_access_token']->getPageAccessToken(), $context['barangayFacebookPage']->getPageId()); 
-            print_r($facebookUploadResponse);
             
             returnSuccess([
                 'message' => 'Announcement added successfully.',
