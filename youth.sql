@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 03, 2025 at 05:09 PM
+-- Generation Time: Nov 05, 2025 at 03:23 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -35,6 +35,8 @@ CREATE TABLE `achievements` (
   `info` text DEFAULT NULL,
   `thumbnail_id` int(11) DEFAULT NULL,
   `sk_official_comment` varchar(255) DEFAULT NULL,
+  `facebook_post_id` varchar(75) DEFAULT NULL,
+  `facebook_object_id` varchar(75) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -43,13 +45,13 @@ CREATE TABLE `achievements` (
 -- Dumping data for table `achievements`
 --
 
-INSERT INTO `achievements` (`id`, `sk_official_id`, `title`, `subtitle`, `info`, `thumbnail_id`, `sk_official_comment`, `created_at`, `updated_at`) VALUES
-(4, 23, 'Brigada Eskwela Support', 'Improving Local Schools', 'In a bid to improve local educational facilities, we partnered with high schools to supply essential school materials and infrastructure improvements. This initiative aimed to create a nurturing learning environment by ensuring that schools had adequate resources and modern facilities, which, in turn, helped boost student performance and community pride.', 38, 'lorem ipsum', '2025-03-18 07:45:06', '2025-09-01 07:23:57'),
-(6, 1, 'Community Volunteers', 'Building Team Spirit designed to build team spirit and leadership skills among the youth. The initia', 'Our SK officials engaged in a series of community service projects with local volunteers. These activities were designed to build team spirit and leadership skills among the youth. The initiatives ranged from environmental clean-ups to organizing cultural events, all aimed at strengthening community bonds and encouraging civic responsibility.', 31, 'lorem ipsum designed to build team spirit and leadership skills among the youth. The initiatives ranged from environmental clean-ups to organizing cultural events, all aimed at strengthenin', '2025-03-18 07:45:06', '2025-09-14 13:29:09'),
-(7, 23, 'Feeding Programm', 'Nurturing the Community', 'Recognizing the pressing need for nutritional support, we launched a comprehensive feeding program for underprivileged families. This program provided healthy meals to children, ensuring that they received the necessary nutrients to thrive, while also promoting community awareness about sustainable food practices and local resource utilization.', NULL, 'lorem ipsum', '2025-03-18 07:45:06', '2025-09-01 07:36:53'),
-(9, 1, 'Community Fiesta', 'Celebrating Togedfsfdtherness', 'Hosted a community fiesta that brought everyone together for celebration.', 32, 'lorem ipsum', '2025-03-18 07:45:06', '2025-09-06 05:24:52'),
-(14, 23, 'Digital Innovation Workshop', 'Enhancing Digital Skills', 'Conducted a digital innovation workshop aimed at improving the technological skills of the youth, focusing on digital literacy, cybersecurity, and creative problem solving. The workshop provided practical skills for modern challenges.', NULL, 'lorem ipsum', '2025-03-24 06:45:44', '2025-08-26 15:46:03'),
-(29, 23, 'sfsdf', 'sdfdsf', 'sdfdsfdsf', NULL, 'sfsdfdfs', '2025-08-27 08:00:14', '2025-08-27 08:00:14');
+INSERT INTO `achievements` (`id`, `sk_official_id`, `title`, `subtitle`, `info`, `thumbnail_id`, `sk_official_comment`, `facebook_post_id`, `facebook_object_id`, `created_at`, `updated_at`) VALUES
+(4, 23, 'Brigada Eskwela Support', 'Improving Local Schools', 'In a bid to improve local educational facilities, we partnered with high schools to supply essential school materials and infrastructure improvements. This initiative aimed to create a nurturing learning environment by ensuring that schools had adequate resources and modern facilities, which, in turn, helped boost student performance and community pride.', 38, 'lorem ipsum', NULL, NULL, '2025-03-18 07:45:06', '2025-09-01 07:23:57'),
+(6, 1, 'Community Volunteers', 'Building Team Spirit designed to build team spirit and leadership skills among the youth. The initia', 'Our SK officials engaged in a series of community service projects with local volunteers. These activities were designed to build team spirit and leadership skills among the youth. The initiatives ranged from environmental clean-ups to organizing cultural events, all aimed at strengthening community bonds and encouraging civic responsibility.', 31, 'lorem ipsum designed to build team spirit and leadership skills among the youth. The initiatives ranged from environmental clean-ups to organizing cultural events, all aimed at strengthenin', NULL, NULL, '2025-03-18 07:45:06', '2025-09-14 13:29:09'),
+(7, 23, 'Feeding Programm', 'Nurturing the Community', 'Recognizing the pressing need for nutritional support, we launched a comprehensive feeding program for underprivileged families. This program provided healthy meals to children, ensuring that they received the necessary nutrients to thrive, while also promoting community awareness about sustainable food practices and local resource utilization.', NULL, 'lorem ipsum', NULL, NULL, '2025-03-18 07:45:06', '2025-09-01 07:36:53'),
+(9, 1, 'Community Fiesta', 'Celebrating Togedfsfdtherness', 'Hosted a community fiesta that brought everyone together for celebration.', 32, 'lorem ipsum', NULL, NULL, '2025-03-18 07:45:06', '2025-09-06 05:24:52'),
+(14, 23, 'Digital Innovation Workshop', 'Enhancing Digital Skills', 'Conducted a digital innovation workshop aimed at improving the technological skills of the youth, focusing on digital literacy, cybersecurity, and creative problem solving. The workshop provided practical skills for modern challenges.', NULL, 'lorem ipsum', NULL, NULL, '2025-03-24 06:45:44', '2025-08-26 15:46:03'),
+(29, 23, 'sfsdf', 'sdfdsf', 'sdfdsfdsf', NULL, 'sfsdfdfs', NULL, NULL, '2025-08-27 08:00:14', '2025-08-27 08:00:14');
 
 -- --------------------------------------------------------
 
@@ -139,16 +141,10 @@ CREATE TABLE `announcements` (
 --
 
 INSERT INTO `announcements` (`id`, `barangay_id`, `title`, `thumbnail_id`, `description`, `what`, `who`, `why`, `where`, `gmap_link`, `is_featured`, `facebook_post_id`, `facebook_object_id`, `created_at`, `updated_at`) VALUES
-(59, 1, 'Clean-up Drive 🍦', 144, 'A community-wide cfegflean-up activityc.', 'Clean surroundings', 'Barangay Youth Council', 'Promote cleanlinesss', 's', 'https://maps.google.com/example1', 1, NULL, NULL, '2025-08-23 11:52:18', '2025-11-03 08:16:38'),
-(60, 1, 'Tree Plantiin', 107, 'Join us in planting trees along the main road.', 'Tree planting', 'Barangay Youth & Volunteers', 'Environmental sustainability', 'Barangay Park', 'https://maps.google.com/example2', 1, NULL, NULL, '2025-08-23 11:52:18', '2025-08-26 07:07:20'),
-(61, 1, 'Sports Tournament', 108, 'Basketball and Volleyball tournament for the youth.', 'Sports activities', 'Barangay Sports Committee', 'Promote healthy lifestyle', 'Barangay Gym', 'https://maps.google.com/example3', 1, NULL, NULL, '2025-08-23 11:52:18', '2025-08-25 02:13:23'),
-(63, 1, 'Job Fair 2025', 120, 'Local employers offering job opportuerewrnities.', 'Employment opportunities', 'Barangay Officials', 'Support livelihood', 'Covered Court', 'https://maps.google.com/example5', 1, NULL, NULL, '2025-08-23 11:52:18', '2025-08-26 16:18:12'),
-(65, 1, 'Medical Mission', NULL, 'Free medical check-up and consultation.', 'Free medical check-up', 'Local Doctors & Volunteers', 'Improve health awareness', 'Barangay Health Center', 'https://maps.google.com/example7', 1, NULL, NULL, '2025-08-23 11:52:18', '2025-08-25 02:06:28'),
-(66, 1, 'dfgfd', 121, 'dfgfgd', 'dgdf', 'dfdf', 'dfgfd', 'dfgd', '', 0, NULL, NULL, '2025-08-26 16:18:40', '2025-08-26 16:18:40'),
-(67, 2, 'Barangay Francia Announcement', 125, 'dsdfs', 'sfdsd', 'sdfds', 'sdfds', 'fdsfd', '', 0, NULL, NULL, '2025-08-27 07:48:43', '2025-08-27 07:48:43'),
-(76, 1, 'adadad', NULL, 'asdsad', 'asdasd', 'asadsd', 'asd', 'saadsdsa', '', 0, NULL, NULL, '2025-11-03 06:35:20', '2025-11-03 06:35:20'),
-(77, 1, 'Clean-up Drive 🍦', NULL, 'A community-wide cfegflean-up activityc.', 'Clean surroundings', 'Barangay Youth Council', 'Promote cleanlinesss', 'Barangay Plaza', '', 0, NULL, NULL, '2025-11-03 06:39:20', '2025-11-03 06:39:20'),
-(81, 1, 'Sports Tournament', 157, 'Basketball and Volleyball tournament for the youth.', 'Sports activities', 'Barangay Sports Committee', 'Promote healthy lifestyle', 'Barangay Gym', '', 0, NULL, NULL, '2025-11-03 08:25:48', '2025-11-03 08:25:48');
+(59, 1, 'Clean-up Drive 🍦', NULL, 'A community-wide cfegflean-up activityc.', 'Clean surroundings', 'Barangay Youth Council', 'Promote cleanlinesss', 's', 'https://maps.google.com/example1', 1, NULL, NULL, '2025-08-23 11:52:18', '2025-11-03 08:16:38'),
+(60, 1, 'Tree Plantiin', NULL, 'Join us in planting trees along the main road.', 'Tree planting', 'Barangay Youth & Volunteers', 'Environmental sustainability', 'Barangay Park', 'https://maps.google.com/example2', 1, NULL, NULL, '2025-08-23 11:52:18', '2025-08-26 07:07:20'),
+(61, 1, 'Sports Tournament', NULL, 'Basketball and Volleyball tournament for the youth.', 'Sports activities', 'Barangay Sports Committee', 'Promote healthy lifestyle', 'Barangay Gym', 'https://maps.google.com/example3', 1, NULL, NULL, '2025-08-23 11:52:18', '2025-08-25 02:13:23'),
+(67, 2, 'Barangay Francia Announcement', 125, 'dsdfs', 'sfdsd', 'sdfds', 'sdfds', 'fdsfd', '', 0, NULL, NULL, '2025-08-27 07:48:43', '2025-08-27 07:48:43');
 
 -- --------------------------------------------------------
 
@@ -172,21 +168,8 @@ CREATE TABLE `announcement_datetime` (
 
 INSERT INTO `announcement_datetime` (`id`, `announcement_id`, `date`, `start_time`, `end_time`, `created_at`, `updated_at`) VALUES
 (80, 61, '2025-08-22', '09:00:00', '17:00:00', '2025-08-23 15:01:18', '2025-08-23 15:01:18'),
-(86, 63, '2025-08-29', '09:00:00', '17:00:00', '2025-08-24 05:28:54', '2025-08-24 05:28:54'),
-(106, 65, '2025-06-22', '09:00:00', '17:00:00', '2025-08-25 13:56:18', '2025-08-25 13:56:18'),
-(107, 65, '2025-06-24', '09:00:00', '17:00:00', '2025-08-25 13:56:18', '2025-08-25 13:56:18'),
-(118, 66, '2025-08-20', '09:00:00', '17:00:00', '2025-08-26 16:18:40', '2025-08-26 16:18:40'),
-(119, 66, '2025-08-28', '09:00:00', '17:00:00', '2025-08-26 16:18:40', '2025-08-26 16:18:40'),
 (120, 67, '2025-08-21', '09:00:00', '17:00:00', '2025-08-27 07:48:43', '2025-08-27 07:48:43'),
-(131, 59, '2025-10-22', '06:00', '19:00', '2025-10-30 15:29:18', '2025-10-30 15:29:18'),
-(132, 59, '2025-10-23', '09:00:00', '17:00:00', '2025-10-30 15:29:18', '2025-10-30 15:29:18'),
-(133, 59, '2025-10-24', '09:00:00', '17:00:00', '2025-10-30 15:29:18', '2025-10-30 15:29:18'),
-(145, 76, '2025-11-26', '09:00:00', '17:00:00', '2025-11-03 06:35:20', '2025-11-03 06:35:20'),
-(146, 77, '2025-11-18', '09:00:00', '17:00:00', '2025-11-03 06:39:20', '2025-11-03 06:39:20'),
-(154, 81, '2025-11-20', '09:00:00', '17:00:00', '2025-11-03 08:25:48', '2025-11-03 08:25:48'),
-(155, 81, '2025-11-19', '09:00:00', '17:00:00', '2025-11-03 08:25:48', '2025-11-03 08:25:48'),
-(156, 81, '2025-11-17', '09:00:00', '17:00:00', '2025-11-03 08:25:48', '2025-11-03 08:25:48'),
-(157, 81, '2025-11-18', '09:00:00', '17:00:00', '2025-11-03 08:25:48', '2025-11-03 08:25:48');
+(131, 59, '2025-10-22', '06:00', '19:00', '2025-10-30 15:29:18', '2025-10-30 15:29:18');
 
 -- --------------------------------------------------------
 
@@ -207,19 +190,10 @@ CREATE TABLE `announcement_image` (
 --
 
 INSERT INTO `announcement_image` (`id`, `announcement_id`, `name`, `created_at`, `updated_at`) VALUES
-(107, 60, 'bb_tryout.jpg', '2025-08-24 07:13:11', '2025-08-24 07:13:11'),
-(108, 61, 'kk_ass.jpg', '2025-08-24 07:13:23', '2025-08-24 07:13:23'),
-(120, 63, '1730117975999.png', '2025-08-26 16:18:12', '2025-08-26 16:18:12'),
-(121, 66, 'wp2367468-honda-civic-type-r-wallpapers.jpg', '2025-08-26 16:18:40', '2025-08-26 16:18:40'),
-(122, 66, 'wp4826572-spider-amoled-wallpapers.jpg', '2025-08-26 16:18:40', '2025-08-26 16:18:40'),
-(123, 66, 'wp4826572.jpg', '2025-08-26 16:18:40', '2025-08-26 16:18:40'),
-(124, 66, 'wp8227766.jpg', '2025-08-26 16:18:40', '2025-08-26 16:18:40'),
 (125, 67, '6a02a4d97be96796b9a816f4a3b420e0.png', '2025-08-27 07:48:43', '2025-08-27 07:48:43'),
-(143, 59, 'Screenshot 2025-10-09 102303.png', '2025-10-30 18:52:59', '2025-10-30 18:52:59'),
-(144, 59, 'Screenshot 2025-10-13 094654.png', '2025-10-30 18:52:59', '2025-10-30 18:52:59'),
-(157, 81, '426ea488fae0096bbb5df51aab4aea4d.png', '2025-11-03 08:25:48', '2025-11-03 08:25:48'),
-(158, 81, '470e72f464163e96d9f87de75083b63a.png', '2025-11-03 08:25:48', '2025-11-03 08:25:48'),
-(159, 81, '3130f31bc56c7ffb96941809d6dbebef.png', '2025-11-03 08:25:48', '2025-11-03 08:25:48');
+(211, 59, '470e72f464163e96d9f87de75083b63a.png', '2025-11-04 08:18:41', '2025-11-04 08:18:41'),
+(212, 60, '3686d12905973b061f57dcfc00ea79bf.png', '2025-11-04 08:18:47', '2025-11-04 08:18:47'),
+(213, 61, '6bd01ad61378e91b7fe8eed1694d508f.png', '2025-11-04 08:18:53', '2025-11-04 08:18:53');
 
 -- --------------------------------------------------------
 
@@ -248,7 +222,7 @@ CREATE TABLE `authorized_accounts` (
 
 INSERT INTO `authorized_accounts` (`id`, `barangay_id`, `provider`, `provider_user_id`, `email`, `name`, `picture`, `access_token`, `refresh_token`, `token_expiry`, `created_at`, `updated_at`) VALUES
 (1, 1, 'google', '111974584167448821561', 'chatgpt4youth@gmail.com', 'Youth', 'https://lh3.googleusercontent.com/a/ACg8ocJkwM7_lMqhDwgYaoVtWP8DsooJwj6YBYWgLOK39C7NAQDA7nE=s96-c', '', '', NULL, '2025-09-18 08:45:21', '2025-10-09 02:57:02'),
-(4, 1, 'facebook', '122108195955031929', 'chatgpt4youth@gmail.com', 'Youthy Hubby', 'https://platform-lookaside.fbsbx.com/platform/profilepic/?asid=122108195955031929&height=200&width=200&ext=1764576803&hash=AT_0iHywPw-WAt2OK5kz7q8g', 'EAAljHlwfLMEBP112MEbDuUJZCF90N6yeTbUXRlksYZCBJL1opdNnW8x02z5pdTSBZBcmj53cbJLTzEvb2HXZCCSmr1x1WBm0RPLx2c2uugpXTs94Tp6JnL4IxWkDf7ezc5Bsr2Rqf49eCZBh066MXOUAXmbS0NHCVmNMsdKxfSgiK5PhgJtywBvBIylAIpPAJrR3IrYTnQ4C0', NULL, '2026-02-01 03:08:11', '2025-11-01 08:13:22', '2025-11-03 03:08:14');
+(4, 1, 'facebook', '122108195955031929', 'chatgpt4youth@gmail.com', 'Youthy Hubby', 'https://platform-lookaside.fbsbx.com/platform/profilepic/?asid=122108195955031929&height=200&width=200&ext=1764576803&hash=AT_0iHywPw-WAt2OK5kz7q8g', 'EAAljHlwfLMEBP6gTvsC6QCWjptSFPYxNBvUr9vnlVopq6TwYTjZBEYxJq4ZAUu5QNLzpHSAguJjiMLnso9VzFebrPA0qaBH7pDAZB8rmt6rUUobl6TxdUUXv46z9dCrNRtMHj8ZBidRZCfs2K9D0PEv95p90vaCLhvmKFadX2E6cPUIt9e4gnX5TOHuZBmZAavAitoZA7Hr3DyBa', NULL, '2026-02-02 08:03:12', '2025-11-01 08:13:22', '2025-11-04 08:03:19');
 
 -- --------------------------------------------------------
 
@@ -275,7 +249,7 @@ CREATE TABLE `barangays` (
 --
 
 INSERT INTO `barangays` (`id`, `cluster_id`, `slug`, `name`, `img`, `sk_barangay_logo`, `username`, `password`, `is_agreed`, `created_at`, `updated_at`) VALUES
-(1, 1, 'san-francisco', 'San Francisco', 'san_francisco_bh.jpg', '', 'sanfrancisco', '$2y$10$/Ec2H0.zKMw6qrbKAX7XqO3o9Kzf3HWfbOeAcpJtdislpaym6Gu3q', 1, '2025-02-17 08:00:20', '2025-10-10 15:00:01'),
+(1, 1, 'san-francisco', 'San Francisco', 'san_francisco_bh.jpg', '', 'sanfrancisco', '$2y$10$hY3y/5kHym6BB9F338sE0ONce7gtFH6.QeGMRSkAJ8HKC2OzfoAz.', 1, '2025-02-17 08:00:20', '2025-11-04 07:39:44'),
 (2, 1, 'francia', 'Francia', 'francia_bh.png', '', '', '', 1, '2025-02-17 08:00:20', '2025-03-31 06:34:03'),
 (3, 1, 'la-purisima', 'La Purisima', 'lapurisima_bh.png', '', '', '', 1, '2025-02-17 08:00:20', '2025-03-31 06:35:32'),
 (4, 1, 'san-juan', 'San Juan', 'san_juan_bh.jpg', '', '', '', 1, '2025-02-17 08:00:20', '2025-03-31 06:35:32'),
@@ -404,7 +378,7 @@ CREATE TABLE `facebook_page_tokens` (
 --
 
 INSERT INTO `facebook_page_tokens` (`id`, `authorized_account_id`, `barangay_facebook_page_id`, `page_access_token`, `created_at`, `updated_at`) VALUES
-(12, 4, 1, 'EAAljHlwfLMEBP2hasyfnvVeQ7WnIiFOXuZCyktzlZCw8sOyUaZAQZBZBkeiOkKimAjKl9mIqvbuFFZCVKMBrivyemXcZBymgCAa5UZAWwPo7w0ZCczF1pAdhCN0EMOVzZAa9EOD0K2l8E7hKZC6yZBFenaZCFHWXVXl5Uta32xoOdLkVLHFjTvcI61QWbjFujwy8n5znpxv29CdqlvwKDTNcaNcJ6ehaf', '2025-11-01 08:13:22', '2025-11-03 03:08:14');
+(12, 4, 1, 'EAAljHlwfLMEBP1kQazxJQnn3vsSpORRfwX0Uo4wrbhMDql4ZADa2U8q1Q90mzeCzLXU48FEoaERblhKy4LdpQBLL2C3qWINKhiZAh6VmShZBVy3pA4hYanFYckEuZA4NYiLBig1OyCRwajB6byicImcsWpjpnyBVumFczaki3fkJHdhTYb5j2pA90oKjPAdBR7aDX1dmptgjytqQgBxNW7sN', '2025-11-01 08:13:22', '2025-11-04 08:03:19');
 
 -- --------------------------------------------------------
 
@@ -463,7 +437,8 @@ INSERT INTO `password_resets` (`id`, `authorized_account_id`, `otp`, `expires_at
 (22, 1, 597968, '2025-10-10 22:58:59', 1),
 (23, 1, 263688, '2025-10-10 23:09:38', 1),
 (24, 1, 137485, '2025-10-10 23:11:08', 1),
-(25, 1, 741764, '2025-10-10 23:14:37', 1);
+(25, 1, 741764, '2025-10-10 23:14:37', 1),
+(26, 1, 975498, '2025-11-04 15:53:53', 1);
 
 -- --------------------------------------------------------
 
@@ -865,19 +840,19 @@ ALTER TABLE `achievement_image`
 -- AUTO_INCREMENT for table `announcements`
 --
 ALTER TABLE `announcements`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=95;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=104;
 
 --
 -- AUTO_INCREMENT for table `announcement_datetime`
 --
 ALTER TABLE `announcement_datetime`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=193;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=201;
 
 --
 -- AUTO_INCREMENT for table `announcement_image`
 --
 ALTER TABLE `announcement_image`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=196;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=218;
 
 --
 -- AUTO_INCREMENT for table `authorized_accounts`
@@ -925,7 +900,7 @@ ALTER TABLE `logs`
 -- AUTO_INCREMENT for table `password_resets`
 --
 ALTER TABLE `password_resets`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT for table `sk_advocacies`

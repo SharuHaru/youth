@@ -20,6 +20,8 @@ class Achievement extends Model
     protected $sk_official_comment  = '';
     protected $sk_official_img      = '';
     protected $sk_official_position  = '';
+    protected $facebook_post_id = '';
+    protected $facebook_object_id = '';
 
 
     /**
@@ -43,6 +45,9 @@ class Achievement extends Model
     }
 
 
+
+
+    // -------------------- GETTERS --------------------
     /**
      * Gets Achievement sk_official_id.
      * @return int
@@ -52,7 +57,6 @@ class Achievement extends Model
         return $this->sk_official_id;
     }
 
-
     /** Gets Achievement sk_official_name
      * @return string
      */
@@ -60,7 +64,6 @@ class Achievement extends Model
     {
         return $this->sk_official_name;
     }
-
 
     /**
      * Gets Achievement title.
@@ -71,7 +74,6 @@ class Achievement extends Model
         return $this->title;
     }
 
-
     /**
      * Gets Achievement subtitle.
      * @return string
@@ -80,7 +82,6 @@ class Achievement extends Model
     {
         return $this->subtitle;
     }
-
 
     /**
      * Gets Achievement info.
@@ -109,7 +110,6 @@ class Achievement extends Model
         return $this->sk_official_comment;
     }
 
-
     /**
      * Gets SK Official's image.
      * @return string
@@ -118,7 +118,6 @@ class Achievement extends Model
     {
         return $this->sk_official_img;
     }
-
 
     /**
      * Gets SK Official's position.
@@ -129,7 +128,29 @@ class Achievement extends Model
         return $this->sk_official_position;
     }
 
+    /**
+     * Gets Facebook Post ID
+     * @return string|null
+     */
+    public function getFacebookPostId()
+    {
+        return $this->facebook_post_id;
+    }
 
+    /**
+     * Gets Facebook Object ID
+     * @return string|null
+     */
+    public function getFacebookObjectId()
+    {
+        return $this->facebook_object_id;
+    }
+
+
+
+
+
+    // -------------------- SETTERS --------------------
     /**
      * Sets Achievement sk_official_id.
      * @param $sk_official_id
@@ -139,7 +160,6 @@ class Achievement extends Model
     {
         $this->sk_official_id = $sk_official_id;
     }
-
 
     /**
      * Sets Achievement sk_official_name.
@@ -151,7 +171,6 @@ class Achievement extends Model
         $this->sk_official_name = $sk_official_name;
     }
 
-
     /**
      * Sets Achievement title.
      * @param $title
@@ -162,7 +181,6 @@ class Achievement extends Model
         $this->title = $title;
     }
 
-
     /**
      * Sets Achievement subtitle.
      * @param $subtitle
@@ -172,7 +190,6 @@ class Achievement extends Model
     {
         $this->subtitle = $subtitle;
     }
-
 
     /**
      * Sets Achievement info.
@@ -215,7 +232,6 @@ class Achievement extends Model
         $this->sk_official_img = $img;
     }
 
-
     /**
      * Sets SK Official's position.
      *
@@ -227,7 +243,28 @@ class Achievement extends Model
         $this->sk_official_position = $position;
     }
 
+    /**
+     * Sets Facebook Post ID
+     * @param string $facebook_post_id
+     */
+    public function setFacebookPostId($facebook_post_id)
+    {
+        $this->facebook_post_id = $facebook_post_id;
+    }
 
+    /**
+    * Sets Facebook Object ID
+    * @param string $facebook_object_id
+    */
+    public function setFacebookObjectId($facebook_object_id)
+    {
+        $this->facebook_object_id = $facebook_object_id;
+    }
+
+
+
+
+    // -------------------- CRUD OPERATIONS --------------------
     /**
      * Override getAssoc() to include sk_official_name.
      *
@@ -245,7 +282,6 @@ class Achievement extends Model
         $arr['sk_official_position'] = $this->getSkOfficialPosition();
         return $arr;
     }
-
 
     /**
      * Retrieves all Achievement records, optionally filtering by SK Official,
@@ -336,16 +372,107 @@ class Achievement extends Model
         return $achievements;
     }
 
+    /**
+     * Insert achievement
+     *
+     * @return bool
+     * @throws Exception
+     */
+    public function insert(): bool
+    {
+        $stmt = $this->getConnection()->prepare("
+            INSERT INTO `" . self::$table . "` 
+            (`sk_official_id`, `title`, `subtitle`, `info`, `thumbnail_id`, `sk_official_comment`, `facebook_post_id`, `facebook_object_id`) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        $stmt->bind_param("isssisss", 
+            $this->sk_official_id, 
+            $this->title, 
+            $this->subtitle, 
+            $this->info, 
+            $this->thumbnail_id, 
+            $this->sk_official_comment,
+            $this->facebook_post_id,
+            $this->facebook_object_id
+        );
 
+        if ($stmt->execute()) {
+            $this->setId($stmt->insert_id);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Update achievement
+     *
+     * @return bool
+     * @throws Exception
+     */
+    public function update(): bool
+    {
+        $stmt = $this->getConnection()->prepare("
+            UPDATE `" . self::$table . "` 
+            SET 
+                `sk_official_id` = ?, 
+                `title` = ?, `subtitle` = ?, 
+                `info` = ?, 
+                `thumbnail_id` = ?,  
+                `sk_official_comment` = ?, 
+                `facebook_post_id` = ?,
+                `facebook_object_id` = ? 
+            WHERE `id` = ?
+        ");
+
+        if (!$stmt) {
+            throw new Exception("Failed to prepare statement: " . $this->getConnection()->error);
+        }
+
+        $stmt->bind_param(
+            "isssisssi", 
+            $this->sk_official_id, 
+            $this->title, 
+            $this->subtitle, 
+            $this->info, 
+            $this->thumbnail_id, 
+            $this->sk_official_comment, 
+            $this->facebook_post_id,
+            $this->facebook_object_id,
+            $this->id
+        );
+        $stmt->execute();
+        return $stmt->affected_rows > 0;
+    }
+
+    /**
+     * Delete achievement
+     *
+     * @return bool
+     * @throws Exception
+     */
+    public function delete(): bool
+    {
+        $stmt = $this->getConnection()->prepare("DELETE FROM `" . self::$table . "` WHERE `id` = ?");
+        $stmt->bind_param("i", $this->id);
+        $stmt->execute();
+        return $stmt->affected_rows > 0;
+    }
+
+
+    // -------------------- FACEBOOK CROSS PLATOFORM POSTING CRUD OPERATIONS --------------------
+
+
+
+
+    // -------------------- UTILITY FUNCTIONS --------------------
 
     /**
      * Returns a summary of achievements per month and total achievements per year.
      * If a barangay slug is provided, the summary is generated only for that specific barangay.
-     *
      * @param string|null $barangaySlug
      * @return array
      * @throws Exception
-     */
+    */
     public static function getMonthlySummary(?string $barangaySlug = null): array
     {
         $conn = self::getConnectionStatic();
@@ -443,66 +570,8 @@ class Achievement extends Model
     }
 
 
-    /**
-     * Insert achievement
-     *
-     * @return bool
-     * @throws Exception
-     */
-    public function insert(): bool
-    {
-        $stmt = $this->getConnection()->prepare("
-            INSERT INTO `" . self::$table . "` 
-            (`sk_official_id`, `title`, `subtitle`, `info`, `thumbnail_id`, `sk_official_comment`) 
-            VALUES (?, ?, ?, ?, ?, ?)
-        ");
-        $stmt->bind_param("isssis", 
-            $this->sk_official_id, 
-            $this->title, 
-            $this->subtitle, 
-            $this->info, 
-            $this->thumbnail_id, 
-            $this->sk_official_comment
-        );
 
-        if ($stmt->execute()) {
-            $this->setId($stmt->insert_id);
-            return true;
-        }
-        return false;
-    }
-
-
-
-    /**
-     * Update achievement
-     *
-     * @return bool
-     * @throws Exception
-     */
-    public function update(): bool
-    {
-        $stmt = $this->getConnection()->prepare("UPDATE `" . self::$table . "` SET `sk_official_id` = ?, `title` = ?, `subtitle` = ?, `info` = ?, `thumbnail_id` = ?,  `sk_official_comment` = ? WHERE `id` = ?");
-        $stmt->bind_param("isssisi", $this->sk_official_id, $this->title, $this->subtitle, $this->info, $this->thumbnail_id, $this->sk_official_comment, $this->id);
-        $stmt->execute();
-        return $stmt->affected_rows > 0;
-    }
-
-
-    /**
-     * Delete achievement
-     *
-     * @return bool
-     * @throws Exception
-     */
-    public function delete(): bool
-    {
-        $stmt = $this->getConnection()->prepare("DELETE FROM `" . self::$table . "` WHERE `id` = ?");
-        $stmt->bind_param("i", $this->id);
-        $stmt->execute();
-        return $stmt->affected_rows > 0;
-    }
-
+    // -------------------- HELPER FUNCTIONS --------------------
 
     /**
      * Update achievement dates
@@ -610,8 +679,4 @@ class Achievement extends Model
 
         return $stmt->execute();
     }
-
-
-    
-
 }
