@@ -22,7 +22,7 @@ require_once __DIR__ .'/models/SkPrograms.php';
 /** Extract Action */
 $action = $_GET['a'] ?? '';
 
-//---------------------- SK Official Management API --------------------
+// -------------------- PUBLIC API --------------------
 if ($action === 'personalInfo') {
     // Use null coalescing to provide a default value
     $slug = $_POST['officialSlug'] ?? '';
@@ -48,6 +48,10 @@ if ($action === 'personalInfo') {
         'programs' => $official->getPrograms()
     ]);
 }
+
+
+
+// -------------------- PRIVATE API --------------------
 
 else if ($action === 'updatePersonalInfo') {
     authorizeRequest(); // Ensure the user is authorized
@@ -137,13 +141,12 @@ else if ($action === 'updatePersonalInfo') {
     }
 }
 
-
-
-
 // ---------------------- SK Official Achievement API --------------------
 else if ($action === 'updateAchievement') {
-    authorizeRequest(); // Ensure the user is authorized
+    // 1. Ensure the user is authorized and retrieve context (including tokens)
+    $context = authorizeRequest();
 
+    // ---  REQUEST DATA CHECKING  ---
     if (!isset($_POST['achievementInfo'])) {
         returnError('Invalid Achievement Information Received.', 400);
     }
@@ -168,6 +171,7 @@ else if ($action === 'updateAchievement') {
     }
 
     try {
+        // ---  FETCH THE MAIN ACHIEVEMENT  ---
         $achievement = new Achievement($achievementInfo['id']);
         if (!$achievement->getId()) {
             returnError('Achievement not found.', 404);
@@ -180,24 +184,13 @@ else if ($action === 'updateAchievement') {
         if (isset($achievementInfo['info'])) $achievement->setInfo($achievementInfo['info']);
         if (isset($achievementInfo['sk_official_comment'])) $achievement->setSkOfficialComment($achievementInfo['sk_official_comment']);
 
-        $achievementId = $achievement->getId();
-        $achievement->update();
 
-        // ✅ Handle dates with new helper
-        $dates = isset($achievementInfo['dates']) && is_array($achievementInfo['dates'])
-            ? $achievementInfo['dates']
-            : [];
-
-        if(empty($dates)) {
-            AchievementDate::deleteByAchievement($achievementId);
-        } else {
-            $achievement->updateDates($dates);
-        }
-
-        // --- IMAGE HANDLING ---
+        // --- ACHIVEMENT IMAGES HANDLING ---
         $uploadDir = __DIR__ . '/../public/Achievements/';
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
 
+
+        // 1. Create the instance of AchievementImage class to handle the images
         $achievementId = $achievement->getId();
         $existingImages = AchievementImage::getByachievement($achievementId, true);
 
@@ -216,7 +209,6 @@ else if ($action === 'updateAchievement') {
 
         // ✅ Map tempIds for new uploads
         $tempIdMap = [];
-
         if (!empty($_FILES['files']) && isset($_FILES['files']['name'])) {
             for ($i = 0; $i < count($_FILES['files']['name']); $i++) {
                 if ($_FILES['files']['error'][$i] === UPLOAD_ERR_OK) {
@@ -251,33 +243,35 @@ else if ($action === 'updateAchievement') {
 
         // ✅ Resolve thumbnail (updates should respect null)
         $thumbnailImageId = null;
-
         if (!empty($achievementInfo['thumbnail_tempId']) && isset($tempIdMap[$achievementInfo['thumbnail_tempId']])) {
             $thumbnailImageId = $tempIdMap[$achievementInfo['thumbnail_tempId']];
-        } elseif (array_key_exists('thumbnail_id', $achievementInfo)) {
-            // Respect explicit null or a real id
-            $thumbnailImageId = $achievementInfo['thumbnail_id'] ?: null;
+        } elseif(!empty($achievementInfo['thumbnail_id'])) {
+            $thumbnailImageId = $achievementInfo['thumbnail_id']; // existing image
+        }
+        else {
+            // ✅ Fallback: first available image (newly uploaded OR existing)
+            if (!empty($tempIdMap)) {
+                $thumbnailImageId = reset($tempIdMap); // first new upload
+            } elseif (!empty($incomingIds)) {
+                $thumbnailImageId = reset($incomingIds); // first kept existing image
+            }
         }
 
         if ($thumbnailImageId !== null) {
             $achievement->setThumbnailId($thumbnailImageId);
             $achievement->updateThumbnail();
-        } else {
-            // ✅ If explicitly null, clear it in DB
-            $achievement->setThumbnailId(null);
-            $achievement->updateThumbnail();
         }
 
 
+        // --- ACHIEVEMENT DATETIMES HANDLING (DB) ---
+        $dates = isset($achievementInfo['dates']) && is_array($achievementInfo['dates'])
+            ? $achievementInfo['dates']
+            : [];
 
-        if ($thumbnailImageId !== null) {
-            $achievement->setThumbnailId($thumbnailImageId);
-            $achievement->updateThumbnail();
-        }
+        if ($achievement->updateDates($dates) && $achievement->update()) {
 
+            // --- FACEBOOK UPDATE ---
 
-
-        if ($achievement->updateDates($dates)) {
             returnSuccess([
                 'message'     => 'Achievement updated successfully.',
                 'achievement' => $achievement->getAssoc(true),
@@ -297,7 +291,10 @@ else if ($action === 'updateAchievement') {
 
 
 else if ($action === 'addAchievement') {
-    authorizeRequest(); // Ensure the user is authorized
+    // Ensure the user is authorized
+    $context = authorizeRequest();
+
+    // ---  REQUEST DATA CHECKING  ---
     if (!isset($_POST['achievementInfo'])) {
         returnError('Invalid Achievement Information Received.', 400);
     }
@@ -319,9 +316,8 @@ else if ($action === 'addAchievement') {
     }
 
     try {
+        // ---  CREATE THE MAIN ACHIEVEMENT  ---
         $achievement = new Achievement();
-
-        // ✅ Set fields
         $achievement->setSkOfficialId($achievementInfo['sk_official_id']);
         $achievement->setTitle($achievementInfo['title']);
         if (isset($achievementInfo['subtitle'])) $achievement->setSubtitle($achievementInfo['subtitle']);
@@ -331,19 +327,11 @@ else if ($action === 'addAchievement') {
         // ✅ Insert first (so we have an ID)
         if ($achievement->insert()) {
             $achievementId = $achievement->getId();
-
-            // ✅ Handle dates
-            $dates = isset($achievementInfo['dates']) && is_array($achievementInfo['dates'])
-                ? $achievementInfo['dates']
-                : [];
-
-            if (!empty($dates)) {
-                $achievement->updateDates($dates);
-            }
-
-            // --- IMAGE HANDLING ---
+            $thumbnailImageId = null;
             $uploadDir = __DIR__ . '/../public/Achievements/';
             if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+            // --- HANDLE CREATING ANNOUNCEMENT IMAGES ---
 
             $incomingImages = $achievementInfo['images'] ?? [];
             $incomingIds = array_filter(array_map(fn($img) => $img['id'] ?? null, $incomingImages));
@@ -380,9 +368,7 @@ else if ($action === 'addAchievement') {
                 }
             }
 
-            // ✅ Resolve thumbnail only if explicitly set
-            $thumbnailImageId = null;
-
+            // ✅ Resolve thumbnail: use thumbnail_tempId if present
             if (!empty($achievementInfo['thumbnail_tempId']) && isset($tempIdMap[$achievementInfo['thumbnail_tempId']])) {
                 $thumbnailImageId = $tempIdMap[$achievementInfo['thumbnail_tempId']];
             } elseif (!empty($achievementInfo['thumbnail_id'])) {
@@ -393,6 +379,20 @@ else if ($action === 'addAchievement') {
                 $achievement->setThumbnailId($thumbnailImageId);
                 $achievement->updateThumbnail();
             }
+
+            // ---  HANDLE CREATING DATETIMES FOR THE ACHIEVEMENTS ---
+            $dates = isset($achievementInfo['dates']) && is_array($achievementInfo['dates'])
+                ? $achievementInfo['dates']
+                : [];
+
+            if (!empty($dates)) {
+                $achievement->updateDates($dates);
+            }
+            
+            
+            // --- UPLOAD THE NEWLY CREATED ANNOUNCEMENT TO FACEBOOK ---
+            // TODO:
+
 
 
             // ✅ Final response
@@ -415,29 +415,34 @@ else if ($action === 'addAchievement') {
 
 
 else if ($action === 'deleteAchievement') {
-    authorizeRequest(); // Ensure the user is authorized
+    try {
+        $context = authorizeRequest();
 
-    // Ensure an ID is provided
-    if (!isset($_POST['id']) || empty($_POST['id'])) {
-        returnError("Achievement ID is required.", 400);
-    }
+        // Ensure an ID is provided
+        if (!isset($_POST['id']) || empty($_POST['id'])) {
+            returnError("Achievement ID is required.", 400);
+        }
 
-    // Instantiate the model with the given ID.
-    // This assumes your model's constructor will load the record if an ID is passed.
-    $achievement = new Achievement($_POST['id']);
-    
-    // Check if the achievement exists (this depends on your model logic)
-    if (!$achievement) {
-        returnError("No achievement found with ID " . $_POST['id'], 404);
-    }
+        $achievementId = intval($_POST['id']);
+        $achievement = new Achievement($_POST['id']);
 
-    // Call the delete() method on the model
-    if ($achievement->delete()) {
-        returnSuccess([
-            'message' => 'Achievement deleted successfully.'
-        ]);
-    } else {
-        returnError("Delete failed. No changes detected or an error occurred.", 500);
+        // Check if the achievement exists (this depends on your model logic)
+        if (!$achievement) {
+            returnError("No achievement found with ID " . $_POST['id'], 404);
+        }
+
+        $deleteOnFacebookResponse = ['success' => false];
+        // Call the delete() method on the model
+        if ($achievement->delete()) {
+            returnSuccess([
+                'message' => 'Achievement deleted successfully.'
+            ]);
+        } else {
+            returnError("Delete failed. No changes detected or an error occurred.", 500);
+        }
+
+    } catch (Exception $e) {
+        returnError('Server error: ' . $e->getMessage(), 500);
     }
 }
 
@@ -784,8 +789,6 @@ else if ($action === 'deleteAdvocacy') {
 }
 
 
-
-
 // ---------------------- SK Official Platform API --------------------
 else if ($action === 'updatePlatform') {
     authorizeRequest(); // Ensure the user is authorized
@@ -909,6 +912,7 @@ else if( $action === 'addPlatform') {
         returnError("Insert failed. An error occurred.", 500);
     }
 }
+
 
 // ---------------------- SK Official Programs API -----------------------
 else if ( $action === 'addProgram') {
@@ -1092,9 +1096,6 @@ else if ($action === 'deleteProgram') {
         returnError("Delete failed. No changes detected or an error occurred.", 500); 
     }
 }
-
-
-
 
 
 
