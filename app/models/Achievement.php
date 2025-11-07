@@ -2,6 +2,9 @@
 
 require_once __DIR__ . '/Model.php';
 require_once __DIR__ . '/AchievementImage.php';
+require_once __DIR__ . '/AchievementDate.php';
+require_once __DIR__ . '/BarangayFacebookPages.php';
+require_once __DIR__ . '/FacebookPageTokens.php';
 
 class Achievement extends Model
 {
@@ -461,17 +464,278 @@ class Achievement extends Model
 
     // -------------------- FACEBOOK CROSS PLATOFORM POSTING CRUD OPERATIONS --------------------
 
+    public function createFacebookPost($page_access_token, $barangayFacebookPageID) {
+
+        // ------------- STEP 1: Prepare the Caption for the Facebook Post -------------
+
+        // 1.2 Fetch the Achievement DateTimes
+        $achievementDates = $this->getDatetimes();
+
+        // Build the Date Section
+        $whenText = '';
+        if (!empty($achievementDates)) {
+            foreach ($achievementDates as $d) {
+                $date = date("F j, Y", strtotime($d['date']));
+                $whenText .= "      " . "\u{2022} $date \n";
+            }
+        }
+
+        $caption =  <<<EOT
+        $this->title
+
+        "$this->subtitle"
+
+        $this->info
+
+
+        📅 Date Accomplished:
+        $whenText
+        
+
+
+        {$this->getSkOfficial(true, true)['full_name']}
+                $this->sk_official_comment
+        EOT;
+
+        // ------------- STEP 2: Upload each photo as unpublished -------------
+        $achievementImagesPath = __DIR__ . "/../../public/Achievements/";
+        $achievementImages = AchievementImage::getByAchievement($this->getId());
+        $uploadedPhotoIds = [];
+
+        foreach ($achievementImages as $img) {
+            $imagePath = $achievementImagesPath . $img->getImg();
+            
+            if (!file_exists($imagePath)) {
+                continue;
+            }
+
+            $ch = curl_init();
+            $data = [
+                'access_token' => $page_access_token,
+                'published' => 'false',
+                'source' => new CURLFile($imagePath)
+            ];
+
+            curl_setopt($ch, CURLOPT_URL, "https://graph.facebook.com/v24.0/{$barangayFacebookPageID}/photos");
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+            $response = curl_exec($ch);
+            $result = json_decode($response, true);
+            curl_close($ch);
+
+            if (isset($result['id'])) {
+                $uploadedPhotoIds[] = $result['id'];
+            }
+        }
+
+        // ------------- STEP 3: Create an Achievement Post and attach all photos -------------
+        $data = [
+            'message' => $caption,
+            'access_token' => $page_access_token
+        ];
+
+        foreach ($uploadedPhotoIds as $i => $photoId) {
+            $data["attached_media[$i]"] = json_encode(['media_fbid' => $photoId]);
+        }
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, "https://graph.facebook.com/v24.0/{$barangayFacebookPageID}/feed");
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+        $response = curl_exec($ch);
+
+        if (curl_errno($ch)) {
+            throw new Exception("Facebook API Error: " . curl_error($ch));
+        }
+
+        curl_close($ch);
+
+        // ------------- STEP 4: Update the Achievement Database with postid and object id  -------------
+
+        // Decode the final Graph API response
+        $result = json_decode($response, true);
+
+        if (isset($result['id'])) {
+            // The ID looks like "851109194751372_122104860351077869"
+            $facebook_post_id = $result['id'];
+
+            // Split into page_id and post_id
+            [$facebook_page_id, $facebook_object_id] = explode('_', $facebook_post_id);
+
+            // Optional: store them separately in your database
+            $this->setFacebookPostId($facebook_post_id);
+            $this->setFacebookObjectId($facebook_object_id);
+            $this->update();
+
+            // ------------- STEP 5: Return  -------------
+            return [
+                'success' => true,
+                'facebook_post_id' => $facebook_post_id,
+                'facebook_object_id' => $facebook_object_id,
+            ];
+        } else {
+            throw new Exception("Unexpected response from Facebook: " . json_encode($result));
+        }
+
+
+    }
+
+
+    /**
+     * Update a Facebook Post based of the Achievement Object
+     * @return mixed
+     * @throws Exception
+     */
+    function updateFacebookPost($page_access_token, $facebook_post_id) {
+
+        // ------------- STEP 1: Re-generate the Message/Caption (Same as in uploadInFacebook) -------------
+
+         // 1.2 Fetch the Achievement DateTimes
+        $achievementDates = $this->getDatetimes();
+
+        // Build the Date Section
+        $whenText = '';
+        if (!empty($achievementDates)) {
+            foreach ($achievementDates as $d) {
+                $date = date("F j, Y", strtotime($d['date']));
+                $whenText .= "      " . "\u{2022} $date \n";
+            }
+        }
+
+        $caption =  <<<EOT
+        $this->title
+
+        "$this->subtitle"
+
+        $this->info
+
+
+        📅 Date Accomplished:
+        $whenText
+        
+
+
+        {$this->getSkOfficial(true, true)['full_name']}
+                $this->sk_official_comment
+        EOT;
+
+        // ------------- STEP 2: Re-upload all photos as unpublished to get new media_fbids -------------
+        $achievementImagesPath = __DIR__ . "/../../public/Achievements/";
+        $achievementImages = AchievementImage::getByAchievement($this->getId());
+        $uploadedPhotoIds = [];
+        $barangayFacebookPageID = explode('_', $facebook_post_id)[0]; // Extract Page ID from the full post ID
+
+        foreach ($achievementImages as $img) {
+            $photoPath = $achievementImagesPath . $img->getImg(); 
+            
+            if (!file_exists($photoPath)) {
+                continue;
+            }
+
+            $ch = curl_init();
+            $data = [
+                'access_token' => $page_access_token,
+                'published' => 'false',
+                'source' => new CURLFile($photoPath)
+            ];
+
+            // Use the same page_id as the original post for the upload
+            curl_setopt($ch, CURLOPT_URL, "https://graph.facebook.com/v24.0/{$barangayFacebookPageID}/photos");
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+            $response = curl_exec($ch);
+            $result = json_decode($response, true);
+            curl_close($ch);
+
+            if (isset($result['id'])) {
+                $uploadedPhotoIds[] = $result['id'];
+            }
+        }
+
+        // ------------- STEP 3: Update the existing post with the new message and attached media -------------
+
+        $data = [
+            'message' => $caption,
+            'access_token' => $page_access_token
+        ];
+
+        // Attach the newly uploaded, unpublished media_fbids
+        foreach ($uploadedPhotoIds as $i => $photoId) {
+            $data["attached_media[$i]"] = json_encode(['media_fbid' => $photoId]);
+        }
+
+        // The endpoint for updating an existing post is the post ID itself (using POST method)
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, "https://graph.facebook.com/v24.0/{$facebook_post_id}");
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+        $response = curl_exec($ch);
+
+        if (curl_errno($ch)) {
+            throw new Exception("Facebook API Error on Update: " . curl_error($ch));
+        }
+
+        curl_close($ch);
+
+        // ------------- STEP 4: RETURN -------------
+        // Decode the final Graph API response
+        $result = json_decode($response, true);
+
+        if (isset($result['success']) && $result['success'] === true) {
+            return [
+                'success' => true,
+                'facebook_post_id' => $facebook_post_id,
+            ];
+        } else {
+            throw new Exception("Unexpected response from Facebook during update: " . json_encode($result));
+        }
+    }
+
+
+    /**
+     * Delete a Facebook Post based of the Achievement Object
+     * @return mixed
+     * @throws Exception
+     */
+    function deleteFacebookPost($postId, $pageAccessToken) {
+        $graphUrl = "https://graph.facebook.com/v24.0/{$postId}?access_token={$pageAccessToken}";
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $graphUrl);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+        $response = curl_exec($ch);
+        if (curl_errno($ch)) {
+            echo json_encode(["error" => curl_error($ch)]);
+            curl_close($ch);
+            returnError("Facebook API Error: " . curl_error($ch), 500);
+        } else {
+            return json_decode($response, true); // Returns {"success": true} if deleted
+        }
+        
+        curl_close($ch);
+    }
+
 
 
 
     // -------------------- UTILITY FUNCTIONS --------------------
 
     /**
-     * Returns a summary of achievements per month and total achievements per year.
-     * If a barangay slug is provided, the summary is generated only for that specific barangay.
-     * @param string|null $barangaySlug
-     * @return array
-     * @throws Exception
+    * Returns a summary of achievements per month and total achievements per year.
+    * If a barangay slug is provided, the summary is generated only for that specific barangay.
+    * @param string|null $barangaySlug
+    * @return array
+    * @throws Exception
     */
     public static function getMonthlySummary(?string $barangaySlug = null): array
     {
@@ -678,5 +942,11 @@ class Achievement extends Model
         $stmt->bind_param("ii", $this->thumbnail_id, $this->id);
 
         return $stmt->execute();
+    }
+
+    public function getDatetimes(): array
+    {
+        require_once __DIR__ . '/AchievementDate.php';
+        return AchievementDate::getByAchievement($this->getId(), true);
     }
 }

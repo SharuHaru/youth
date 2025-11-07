@@ -271,6 +271,26 @@ else if ($action === 'updateAchievement') {
         if ($achievement->updateDates($dates) && $achievement->update()) {
 
             // --- FACEBOOK UPDATE ---
+            $facebookPostId = $achievement->getFacebookPostId();
+            if ($facebookPostId) {
+                try {
+                    // This calls the method you created in the previous turn
+                    $facebookUpdateResponse = $achievement->updateFacebookPost(
+                        $context['page_access_token']->getPageAccessToken(), 
+                        $facebookPostId
+                    );
+                    
+                    if (getenv('APP_DEBUG')) {
+                        error_log("Facebook Update Success: " . print_r($facebookUpdateResponse, true));
+                    }
+                    
+                } catch (Exception $e) {
+                    // Log the Facebook update error but do not halt the entire process
+                    // if the local database update was successful.
+                    error_log("Facebook post update failed for post $facebookPostId: " . $e->getMessage());
+                }
+            }
+
 
             returnSuccess([
                 'message'     => 'Achievement updated successfully.',
@@ -340,8 +360,8 @@ else if ($action === 'addAchievement') {
             if (!empty($_FILES['files']) && isset($_FILES['files']['name'])) {
                 for ($i = 0; $i < count($_FILES['files']['name']); $i++) {
                     if ($_FILES['files']['error'][$i] === UPLOAD_ERR_OK) {
-                        $originalName = basename($_FILES['files']['name'][$i]);
-                        $filename = uniqid() . "_" . $originalName; // ✅ prevent overwrite
+                        $filename= basename($_FILES['files']['name'][$i]);
+        
                         $targetFile = $uploadDir . $filename;
 
                         if (move_uploaded_file($_FILES['files']['tmp_name'][$i], $targetFile)) {
@@ -355,9 +375,8 @@ else if ($action === 'addAchievement') {
                             // ✅ Match to tempId from payload
                             if (!empty($achievementInfo['images'])) {
                                 foreach ($achievementInfo['images'] as $imgInfo) {
-                                    if (empty($imgInfo['id']) && !empty($imgInfo['tempId'])) {
+                                    if ($imgInfo['img'] === $filename && !empty($imgInfo['tempId'])) {
                                         $tempIdMap[$imgInfo['tempId']] = $newImageId;
-                                        break;
                                     }
                                 }
                             }
@@ -391,7 +410,7 @@ else if ($action === 'addAchievement') {
             
             
             // --- UPLOAD THE NEWLY CREATED ANNOUNCEMENT TO FACEBOOK ---
-            // TODO:
+            $facebookUploadResponse = $achievement->createFacebookPost($context['page_access_token']->getPageAccessToken(), $context['barangayFacebookPage']->getPageId());
 
 
 
@@ -432,7 +451,20 @@ else if ($action === 'deleteAchievement') {
         }
 
         $deleteOnFacebookResponse = ['success' => false];
+
         // Call the delete() method on the model
+        if ($achievement->getFacebookPostId()) {
+            $deleteOnFacebookResponse = $achievement->deleteFacebookPost(
+                $achievement->getFacebookPostId(),
+                $context['page_access_token']->getPageAccessToken()
+            );
+        }
+
+        // Log FB deletion result if debugging
+        if (getenv('APP_DEBUG')) {
+            error_log(print_r($deleteOnFacebookResponse, true));
+        }
+
         if ($achievement->delete()) {
             returnSuccess([
                 'message' => 'Achievement deleted successfully.'

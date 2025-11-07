@@ -3,6 +3,10 @@ declare(strict_types=1);
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 require_once('../vendor/autoload.php');
+require_once __DIR__ .'/models/Barangay.php';
+require_once __DIR__ .'/models/AuthorizedAccount.php';
+require_once __DIR__ .'/models/BarangayFacebookPages.php';
+require_once __DIR__ .'/models/FacebookPageTokens.php';
 
 
 use Dotenv\Dotenv;
@@ -64,8 +68,8 @@ header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token, Authorization');
 header('Content-Type: application/json');
 
-/** Start Session */
-session_start();
+
+
 
 // For state-changing requests, verify the CSRF token.
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
@@ -99,6 +103,7 @@ function authorizeRequest() {
         }
 
         // 🧾 Barangay is required
+        
         $barangay = Barangay::findBy('id', $decoded->barangayId);
         if (!$barangay) {
             returnError("Unauthorized: Invalid barangay.", 401);
