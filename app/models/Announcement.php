@@ -485,7 +485,7 @@ class Announcement extends Model
                 $date = date("F j, Y", strtotime($dt['date']));
                 $start = date("g:ia", strtotime($dt['start_time']));
                 $end   = date("g:ia", strtotime($dt['end_time']));
-                $whenText .= "  \u{2022} $date – $start to $end\n";
+                $whenText .= "      " . "\u{2022} $date – $start to $end\n";
             }
         } else {
             $whenText = "To be announced\n";
@@ -497,16 +497,19 @@ class Announcement extends Model
 
         "{$this->description}"
 
-        ❓ {$this->convertToBoldUnicode("What:")} {$this->what}
 
-        📍 {$this->convertToBoldUnicode("Where:")} {$this->where}
 
-        📅 {$this->convertToBoldUnicode("When:")}
+
+        ❓ {$this->convertToBoldUnicode("WHAT:")} {$this->what}
+
+        📍 {$this->convertToBoldUnicode("WHERE:")} {$this->where}
+
+        📅 {$this->convertToBoldUnicode("WHEN:")}
         $whenText
 
-        👤 {$this->convertToBoldUnicode("Who:")} {$this->who}
+        👤 {$this->convertToBoldUnicode("WHO:")} {$this->who}
 
-        💡 {$this->convertToBoldUnicode("Why:")} {$this->why}
+        💡 {$this->convertToBoldUnicode("WHY:")} {$this->why}
 
         #youthTesting
         EOT;
@@ -628,21 +631,23 @@ class Announcement extends Model
         }
 
         // Format the new Facebook Caption
-        $message = <<<EOT
+        $message = <<< EOT
         $boldTitle
 
         "{$this->description}"
+        \n
 
-        ❓ {$this->convertToBoldUnicode("What:")} {$this->what}
 
-        📍 {$this->convertToBoldUnicode("Where:")} {$this->where}
+        ❓ {$this->convertToBoldUnicode("WHAT:")} {$this->what}
 
-        📅 {$this->convertToBoldUnicode("When:")}
+        📍 {$this->convertToBoldUnicode("WHERE:")} {$this->where}
+
+        📅 {$this->convertToBoldUnicode("WHEN:")}
         $whenText
 
-        👤 {$this->convertToBoldUnicode("Who:")} {$this->who}
+        👤 {$this->convertToBoldUnicode("WHO:")} {$this->who}
 
-        💡 {$this->convertToBoldUnicode("Why:")} {$this->why}
+        💡 {$this->convertToBoldUnicode("WHY:")} {$this->why}
 
         #youthTesting
         EOT;
@@ -744,6 +749,7 @@ class Announcement extends Model
         } else {
             return json_decode($response, true); // Returns {"success": true} if deleted
         }
+        
         curl_close($ch);
     }
 

@@ -175,15 +175,15 @@ else if ($action === 'add-announcement') {
         if (isset($announcementInfo['where'])) $announcement->setWhere($announcementInfo['where']);
         if (isset($announcementInfo['why'])) $announcement->setWhy($announcementInfo['why']);
 
-        // --- HANDLE CREATING ANNOUNCEMENT IMAGES ---
+        
         if ($announcement->insert()) {
             $announcementId = $announcement->getId();
             $thumbnailImageId = null;
             $uploadDir = __DIR__ . '/../public/Announcements/';
 
             if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-
-            // ✅ Map tempIds to actual DB IDs
+            
+            // --- HANDLE CREATING ANNOUNCEMENT IMAGES ---
             $tempIdMap = [];
 
             if (!empty($_FILES['files']) && isset($_FILES['files']['name'])) {
@@ -387,7 +387,6 @@ else if ($action === 'update-announcement') {
         $thumbnailImageId = null;
         if (!empty($announcementInfo['thumbnail_tempId']) && isset($tempIdMap[$announcementInfo['thumbnail_tempId']])) {
             $thumbnailImageId = $tempIdMap[$announcementInfo['thumbnail_tempId']];
-            print_r($tempIdMap);
         } elseif (!empty($announcementInfo['thumbnail_id'])) {
             $thumbnailImageId = $announcementInfo['thumbnail_id']; // existing image
         } else {
@@ -411,7 +410,6 @@ else if ($action === 'update-announcement') {
             : [];
 
         if ($announcement->updateWithDatetimes($datetimes) && $announcement->update()) { // Ensure the main announcement fields are saved
-            
             // --- FACEBOOK UPDATE ---
             $facebookPostId = $announcement->getFacebookPostId();
             if ($facebookPostId) {
