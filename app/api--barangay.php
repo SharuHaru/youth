@@ -8,7 +8,7 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\JWK;
 use Firebase\JWT\Key;
 
-/** imports */
+// Model Imports
 require_once __DIR__ . '/models/Barangay.php';
 require_once __DIR__ . '/models/SkOfficial.php';
 require_once __DIR__ . '/models/Announcement.php';

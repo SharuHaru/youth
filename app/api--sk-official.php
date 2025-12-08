@@ -7,7 +7,7 @@ require_once('../vendor/autoload.php');
 /** Check Guard Constant */
 if (!defined('__BASE')) { exit(); }
 
-/** imports */
+// Models Imports
 require_once __DIR__ . '/models/SkOfficial.php';
 require_once __DIR__ .'/models/Achievement.php';
 require_once __DIR__ .'/models/AchievementDate.php';

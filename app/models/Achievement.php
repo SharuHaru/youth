@@ -462,6 +462,8 @@ class Achievement extends Model
     }
 
 
+    
+
     // -------------------- FACEBOOK CROSS PLATOFORM POSTING CRUD OPERATIONS --------------------
 
     public function createFacebookPost($page_access_token, $barangayFacebookPageID) {
@@ -721,8 +723,6 @@ class Achievement extends Model
         } else {
             return json_decode($response, true); // Returns {"success": true} if deleted
         }
-        
-        curl_close($ch);
     }
 
 
