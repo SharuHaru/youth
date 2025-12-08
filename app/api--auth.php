@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 use Firebase\JWT\JWT;
-use Firebase\JWT\JWK;
 use Firebase\JWT\Key;
 
 require_once('../vendor/autoload.php');
@@ -19,13 +18,11 @@ require_once __DIR__ . '/helpers/Mailer.php';
 if (!defined('__BASE')) { exit(); }
 
 
-
 /** Extract Action */
 $action = $_GET['a'] ?? '';
 
 
-
-// Authentication & Authorization API
+// -------------------- Authentication & Authorization API --------------------
 if ($action === 'login')
 {
     // Get Inputs
@@ -92,10 +89,7 @@ else if($action === 'logout') {
 
 
 
-
-
-
-// Authorization using Third Party Accounts (Facebook and Google)
+// -------------------- Authorization using Third Party Accounts (Facebook and Google) --------------------
 if ($action === 'process-google')
 {
     // 1. Create a provider (Google example)
@@ -322,7 +316,8 @@ else if ($action === 'process-facebook')
 }
 
 
-// Methods for Password Reset Feature
+
+// -------------------- Methods for Password Reset Feature --------------------
 if($action === 'send-reset-otp')
 {
     $email = $_POST['email'] ?? '';
@@ -454,10 +449,7 @@ if ($action === 'reset-password') {
 
 
 
-
-
-
-// Helper function
+// -------------------- HELPER FUNCTION --------------------
 function createOtp(int $length = 6): string {
     $digits = '0123456789';
     $otp = '';

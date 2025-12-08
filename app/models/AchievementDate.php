@@ -38,20 +38,32 @@ class AchievementDate extends Model
         }
     }
 
-    // -------------------
-    // Getters
-    // -------------------
+
+
+    // -------------------- GETTERS --------------------
     public function getAchievementId(): int { return $this->achievement_id; }
     public function getDate(): ?string { return $this->date; }
     public function getCreatedAt(): ?string { return $this->created_at; }
     public function getUpdatedAt(): ?string { return $this->updated_at; }
 
-    // -------------------
-    // Setters
-    // -------------------
+
+
+    // -------------------- SETTERS --------------------
     public function setAchievementId(int $achievement_id): void { $this->achievement_id = $achievement_id; }
     public function setDate(?string $date): void { $this->date = $date; }
 
+
+
+
+    // -------------------- CRUD OPERATIONS --------------------
+    /**
+     * Convert to associative array
+     */
+    public function getAssoc(bool $basic = false): array
+    {
+        return parent::getAssoc($basic);
+    }
+    
     /**
      * Insert record
      */
@@ -126,6 +138,11 @@ class AchievementDate extends Model
         return $stmt->affected_rows > 0;
     }
 
+
+
+    
+    // -------------------- UTILITY FUNCTIONS --------------------
+
     /**
      * Fetch all records for an achievement
      */
@@ -174,13 +191,7 @@ class AchievementDate extends Model
         return $ids;
     }
 
-    /**
-     * Convert to associative array
-     */
-    public function getAssoc(bool $basic = false): array
-    {
-        return parent::getAssoc($basic);
-    }
+
 
 
 
