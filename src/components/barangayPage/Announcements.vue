@@ -1,6 +1,7 @@
 <template>
     <!-- Announcements Cards -->
-    <div class="carousel-container">
+    <div class="carousel-container">   
+        <!-- More Images -->
         <div class="relative w-[80%] d-flex flex-col justify-center items-center gap-5">
             <h1 class="title">ANNOUNCEMENTS</h1>
             <v-tabs v-model="selectedAnnouncementSort" grow class="my-5">
@@ -77,8 +78,11 @@
 
     <!-- Announcement Dialog -->
     <v-dialog v-model=showAnnouncementDetails min-width='800px' max-width="1200px" max-height="90vh">
-        <v-card class="d-flex justify-center items-center py-10 pt-15 ga-5" style="border-radius: 1rem;">
+        <v-card class="d-flex justify-center items-center py-10 pt-15 ga-5" style="border-radius: 1rem;">    
+            <!-- More Images -->
             <h1 class="w-[90%] text-3xl font-extrabold text-center uppercase">{{ announcementDetails.title }} <v-divider class="mt-3"></v-divider></h1>
+   
+   
 
             <v-carousel
             class="ma-10"
@@ -86,6 +90,7 @@
             v-if="imagesContainer"
             hide-delimiter-background
             >
+           
                 <!-- Carousel Items -->
                 <v-carousel-item
                 class="rounded-lg elevation-10"
@@ -182,6 +187,29 @@
                             <h3 class='text-center text-sm'><i class="text-center text-lg font-extrabold">WHERE</i><br>{{ announcementDetails.where }}</h3>
                         </div>
                     </div>
+
+                    <div class="w-full d-flex justify-center items-center ga-3">
+                        <v-btn class="border" icon>
+                            <v-icon :size="30">mdi-map-marker</v-icon>
+                        </v-btn>
+                        <div class="custom-card w-full d-flex flex-col justify-center items-center ga-1 elevation-5 py-3 px-5 rounded-md border">
+                            <h3 class='text-center text-sm'><i class="text-center text-lg font-extrabold">SOCIAL MEDIA LINKS</i></h3>
+                            <v-sheet class="d-flex flex-row justify-around items-center w-full ga-3">
+                                <v-btn icon>
+                                <v-avatar class="w-full h-full" :image="$store.getters.base + 'insta.png'" size="30"></v-avatar>
+                                </v-btn>
+
+                                <v-btn icon :href="getFacebookPostLink(announcementDetails.facebook_post_id)" target="_blank" rel="noopener noreferrer">
+                                <v-avatar :image="$store.getters.base + 'fb.png'" size="30"></v-avatar>      
+                                </v-btn>
+                        
+
+                                <v-btn icon>
+                                <v-icon>mdi-link-variant</v-icon>
+                                </v-btn>
+                            </v-sheet>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -199,7 +227,6 @@ import "swiper/css/effect-coverflow";
 import "swiper/css/autoplay";
 import "swiper/css/pagination";
 import { EffectCoverflow, Autoplay, Pagination } from "swiper/modules";
-
 
 import $ from 'jquery';
 
@@ -230,7 +257,16 @@ export default {
             return window.location.origin === 'http://localhost:5173'
                 ? 'http://localhost:5173'
                 : this.$store.getters['base'];
+        },
+        getFacebookPostLink() {
+            return (fbId) => {
+                if (!fbId || !fbId.includes("_")) return "#";
+
+                const [pageId, postId] = fbId.split("_");
+                return `https://www.facebook.com/${pageId}/posts/${postId}`;
+            };
         }
+        
     },
     mounted() {
         this.$nextTick(() => {

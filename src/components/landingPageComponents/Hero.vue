@@ -15,6 +15,7 @@
             <SocialLinks class="d-flex flex-column justify-center items-center gap-3 px-15"></SocialLinks>  
         </div>
 
+
         <div class="magicpattern top-[-50%] left-[-12%]"/>
         <div class="magicpattern top-[-50%] right-[-15%]"/>
         <div class="magicpattern3 bottom-[-25%] left-[0%]"/>
@@ -31,80 +32,8 @@
         <div ref="swiperContainer" class="swiper mySwiper">
             <div class="swiper-wrapper">
 
-                <div class="swiper-slide pa-5 d-flex flex-col justify-evenly items-center ga-5">
-                    <img :src="$store.getters.base + `public/announcements/youthnight.jpg`" class="max-h-[300px] rounded-lg" alt="">
-                    <div class="w-full text-center">
-                        <h4 class="uppercase font-bold text-sm">San Francisco, Iriga City</h4>
-                        <h3 class="capitalize font-extrabold text-lg">Kalinisan Program</h3>
-                        <span class="italic text-xs">February 15, 2025</span>
-                    </div>
-                </div>
-
-                <div class="swiper-slide d-flex flex-col justify-evenly items-center ga-5">
-                    <img :src="$store.getters.base + `public/achievements/1.jpg`" class="rounded-lg" alt="">
-                    <div class="w-full">
-                        <h4 class="uppercase font-bold text-sm">San Francisico, Iriga City</h4>
-                        <h3 class="capitalize font-extrabold text-lg">Community Volunteers</h3>
-                        <h4 class="w-full italic text-xs text-end">March 19, 2025</h4>
-                    </div>
-                </div>
-
-                <div class="swiper-slide pa-5 d-flex flex-col justify-evenly items-center ga-5">
-                    <img :src="$store.getters.base + `public/announcements/youthnight.jpg`" class="max-h-[300px] rounded-lg" alt="">
-                    <div class="w-full text-center">
-                        <h4 class="uppercase font-bold text-sm">San Francisco, Iriga City</h4>
-                        <h3 class="capitalize font-extrabold text-lg">Kalinisan Program</h3>
-                        <span class="italic text-xs">February 15, 2025</span>
-                    </div>
-                </div>
-
-                <div class="swiper-slide d-flex flex-col justify-evenly items-center ga-5">
-                    <img :src="$store.getters.base + `public/achievements/1.jpg`" class="rounded-lg" alt="">
-                    <div class="w-full">
-                        <h4 class="uppercase font-bold text-sm">San Francisico, Iriga City</h4>
-                        <h3 class="capitalize font-extrabold text-lg">Community Volunteers</h3>
-                        <h4 class="w-full italic text-xs text-end">March 19, 2025</h4>
-                    </div>
-                </div>
-
-                <div class="swiper-slide pa-5 d-flex flex-col justify-evenly items-center ga-5">
-                    <img :src="$store.getters.base + `public/announcements/youthnight.jpg`" class="max-h-[300px] rounded-lg" alt="">
-                    <div class="w-full text-center">
-                        <h4 class="uppercase font-bold text-sm">San Francisco, Iriga City</h4>
-                        <h3 class="capitalize font-extrabold text-lg">Kalinisan Program</h3>
-                        <span class="italic text-xs">February 15, 2025</span>
-                    </div>
-                </div>
-
-                <div class="swiper-slide d-flex flex-col justify-evenly items-center ga-5">
-                    <img :src="$store.getters.base + `public/achievements/1.jpg`" class="rounded-lg" alt="">
-                    <div class="w-full">
-                        <h4 class="uppercase font-bold text-sm">San Francisico, Iriga City</h4>
-                        <h3 class="capitalize font-extrabold text-lg">Community Volunteers</h3>
-                        <h4 class="w-full italic text-xs text-end">March 19, 2025</h4>
-                    </div>
-                </div>
-
-                <div class="swiper-slide pa-5 d-flex flex-col justify-evenly items-center ga-5">
-                    <img :src="$store.getters.base + `public/announcements/youthnight.jpg`" class="max-h-[300px] rounded-lg" alt="">
-                    <div class="w-full text-center">
-                        <h4 class="uppercase font-bold text-sm">San Francisco, Iriga City</h4>
-                        <h3 class="capitalize font-extrabold text-lg">Kalinisan Program</h3>
-                        <span class="italic text-xs">February 15, 2025</span>
-                    </div>
-                </div>
-
-                <div class="swiper-slide d-flex flex-col justify-evenly items-center ga-5">
-                    <img :src="$store.getters.base + `public/achievements/1.jpg`" class="rounded-lg" alt="">
-                    <div class="w-full">
-                        <h4 class="uppercase font-bold text-sm">San Francisico, Iriga City</h4>
-                        <h3 class="capitalize font-extrabold text-lg">Community Volunteers</h3>
-                        <h4 class="w-full italic text-xs text-end">March 19, 2025</h4>
-                    </div>
-                </div>
-
-                <div class="swiper-slide pa-5 d-flex flex-col justify-evenly items-center ga-5">
-                    <img :src="$store.getters.base + `public/announcements/youthnight.jpg`" class="max-h-[300px] rounded-lg" alt="">
+                <div v-for="n of 10" class="swiper-slide pa-5 d-flex flex-col justify-evenly items-center ga-5">
+                    <img :src="$store.getters.base + `public/announcements/3686d12905973b061f57dcfc00ea79bf.png`" class="max-h-[300px] rounded-lg" alt="">
                     <div class="w-full text-center">
                         <h4 class="uppercase font-bold text-sm">San Francisco, Iriga City</h4>
                         <h3 class="capitalize font-extrabold text-lg">Kalinisan Program</h3>

@@ -42,6 +42,14 @@ export default {
                 return false;
             }
         },
+        getFacebookPostLink() {
+            return (fbId) => {
+                if (!fbId || !fbId.includes("_")) return "#";
+
+                const [pageId, postId] = fbId.split("_");
+                return `https://www.facebook.com/${pageId}/posts/${postId}`;
+            };
+        },
 
 
         selectedDates: {
@@ -414,7 +422,7 @@ export default {
             <div class="w-full grid grid-cols-3 ga-10 overflow-y-scroll pa-5">
 
                 <!-- Image Form -->
-                <div class="w-full d-flex items-start relative pa-0 col-span-1">
+                <div class="w-full d-flex flex-col justify-between ga-5 items-start relative pa-0 col-span-1">
                     <div class="w-full grid grid-cols-3 ga-4">
                     
                         <div class="d-flex justify-evenly items-center col-span-3">
@@ -482,6 +490,26 @@ export default {
                         <v-icon size="40">
                             mdi-plus
                         </v-icon>
+                        </div>
+                    </div>
+
+                    <div class="w-[90%] d-flex justify-center items-center ga-3">
+                        <div class="custom-card w-full d-flex flex-col justify-center items-center ga-1 elevation-5 py-3 px-5 rounded-md border">
+                            <h3 class='text-center text-sm'><i class="text-center text-lg font-extrabold">SOCIAL MEDIA LINKS</i></h3>
+                            <v-sheet class="d-flex flex-row justify-around items-center w-full ga-3">
+                                <v-btn icon>
+                                <v-avatar class="w-full h-full" :image="$store.getters.base + 'insta.png'" size="30"></v-avatar>
+                                </v-btn>
+
+                                <v-btn icon :href="getFacebookPostLink(announcementInfo.facebook_post_id)" target="_blank" rel="noopener noreferrer">
+                                <v-avatar :image="$store.getters.base + 'fb.png'" size="30"></v-avatar>      
+                                </v-btn>
+                        
+
+                                <v-btn icon>
+                                <v-icon>mdi-link-variant</v-icon>
+                                </v-btn>
+                            </v-sheet>
                         </div>
                     </div>
                 </div>
