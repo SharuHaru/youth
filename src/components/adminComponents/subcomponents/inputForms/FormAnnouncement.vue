@@ -1,6 +1,7 @@
 <script>
 import { VDateInput } from 'vuetify/lib/labs/components.mjs';
 import { VTimePicker } from 'vuetify/labs/VTimePicker'
+import SocialLinks from '@/components/landingPageComponents/SocialLinks.vue';
 import $ from 'jquery';
 
 export default {
@@ -10,7 +11,8 @@ export default {
     },
     components: {
         VDateInput,
-        VTimePicker
+        VTimePicker,
+        SocialLinks
     },
     emits: ["close", "fetchInfo"],
     data() {
@@ -493,24 +495,23 @@ export default {
                         </div>
                     </div>
 
-                    <div class="w-[90%] d-flex justify-center items-center ga-3">
-                        <div class="custom-card w-full d-flex flex-col justify-center items-center ga-1 elevation-5 py-3 px-5 rounded-md border">
-                            <h3 class='text-center text-sm'><i class="text-center text-lg font-extrabold">SOCIAL MEDIA LINKS</i></h3>
-                            <v-sheet class="d-flex flex-row justify-around items-center w-full ga-3">
-                                <v-btn icon>
-                                <v-avatar class="w-full h-full" :image="$store.getters.base + 'insta.png'" size="30"></v-avatar>
-                                </v-btn>
-
-                                <v-btn icon :href="getFacebookPostLink(announcementInfo.facebook_post_id)" target="_blank" rel="noopener noreferrer">
-                                <v-avatar :image="$store.getters.base + 'fb.png'" size="30"></v-avatar>      
-                                </v-btn>
-                        
-
-                                <v-btn icon>
-                                <v-icon>mdi-link-variant</v-icon>
-                                </v-btn>
-                            </v-sheet>
-                        </div>
+                    <div class="custom-card w-full d-flex flex-col justify-center items-center ga-1 elevation-5 py-3 px-5 rounded-md border">
+                        <h3 class='text-center text-sm'><i class="text-center text-lg font-extrabold">SOCIAL MEDIA LINKS</i></h3>
+                        <social-links
+                        class="w-full"
+                        :title="null"
+                        :socialMediaLinks="
+                            {
+                                facebook: {
+                                    iconPath: 'fb.png',
+                                    url: getFacebookPostLink(announcementInfo.facebook_post_id)
+                                },
+                                instagram: {
+                                    iconPath: 'insta.png',
+                                    url: announcementInfo.instagram_link || '#'
+                                }
+                            }"
+                        ></social-links>
                     </div>
                 </div>
 

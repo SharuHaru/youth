@@ -1,7 +1,7 @@
 <template>
     <!-- Achievements Card -->
     <v-container fluid class="pa-0 ma-0 mb-15 d-flex flex-col justify-start items-center ga-5">
-                <!-- Title Section -->
+        <!-- Title Section -->
         <v-card-title class="gradient-text title d-flex items-center justify-center ga-5 ma-5">
             <v-icon size="60">mdi-trophy</v-icon>
                 <h1 class="gradient-text font-black uppercase">Achievements</h1>
@@ -37,6 +37,7 @@
                     <h5 class="text-base">{{ achievement.subtitle }}</h5>
                     <h5 class="text-xs font-italic absolute bottom-0 right-0 pa-1">{{ formatDate(achievement.date) }}</h5>
                 </article>
+
 
                 <v-card class="w-[90%] d-flex items-center ga-1 px-5 mb-5 elevation-5">
                     <v-avatar
@@ -113,6 +114,22 @@
                     <p class="italic font-extralight text-sm overflow-y-auto h-full">{{ achievementDetails.sk_official_comment }}</p>
                 </div>
             </v-sheet>
+
+            <social-links
+            class="px-10 ga-5"
+                title="See on Achievement Social Media"
+                :socialMediaLinks="
+                {
+                    facebook: {
+                        iconPath: 'fb.png',
+                        url: getFacebookPostLink(achievementDetails.facebook_post_id)
+                    },
+                    instagram: {
+                        iconPath: 'insta.png',
+                        url: achievementDetails.instagram_link || '#'
+                    }
+                }"
+            />
         </v-card>
     </v-dialog>
 
@@ -127,6 +144,9 @@ import "swiper/css/pagination";
 import { EffectCoverflow, Autoplay, Pagination } from "swiper/modules";
 import $ from 'jquery';
 
+// Import Components
+import SocialLinks from "../landingPageComponents/SocialLinks.vue";
+
 export default {
     props: {
         barangayId: {
@@ -134,6 +154,7 @@ export default {
             required: true
         }
     },
+    components: { SocialLinks },
     data() {
         return {
             myBarangayId: this.barangayId,
@@ -345,6 +366,14 @@ export default {
             return window.location.origin === 'http://localhost:5173'
             ? 'http://localhost:5173'
             : this.$store.getters['base'];
+        },
+        getFacebookPostLink() {
+            return (fbId) => {
+                if (!fbId || !fbId.includes("_")) return "#";
+
+                const [pageId, postId] = fbId.split("_");
+                return `https://www.facebook.com/${pageId}/posts/${postId}`;
+            };
         }
     }
 };

@@ -2,12 +2,17 @@
 import { VDateInput } from 'vuetify/lib/labs/components.mjs';
 import $ from 'jquery';
 
+// Component Imports
+import SocialLinks from '@/components/landingPageComponents/SocialLinks.vue';
+
+
 export default {
     props: {
         achievement: Object,
         action: String
     },
     emits: ["close", "fetchInfo"],
+    components: { SocialLinks },
     data() {
         return {
         initialAchievementInfo: {},
@@ -313,8 +318,14 @@ export default {
         officialNamesList() {
             return this.officialNames.map(official => official.full_name);
         },
+        getFacebookPostLink() {
+            return (fbId) => {
+                if (!fbId || !fbId.includes("_")) return "#";
 
-
+                const [pageId, postId] = fbId.split("_");
+                return `https://www.facebook.com/${pageId}/posts/${postId}`;
+            };
+        },
         selectedDates: {
             get() {
                 // Always convert to Date object for v-date-input to work
@@ -410,7 +421,8 @@ export default {
     },
 
     components: {
-        VDateInput
+        VDateInput,
+        SocialLinks
     },
     created() {
         // Initialize for new achievement
@@ -435,8 +447,8 @@ export default {
             <!-- Image Container and Achievement Form -->
             <div class="w-full pa-5 grid grid-cols-2 overflow-y-scroll ga-10">
                 <!-- Achievement Display Image -->
-                <!-- Image Form -->
-                <div class="w-full d-flex items-start relative pa-0 col-span-1">
+                <!-- Image Form and Social Links-->
+                <div class="w-full d-flex flex-col items-center ga-10 relative pa-0 col-span-1">
                     <div class="w-full grid grid-cols-2 ga-4">
                     
                         <div class="d-flex justify-evenly items-center col-span-2">
@@ -498,7 +510,6 @@ export default {
                             </v-btn>
                         </div>
 
-
                         <div
                             class="custom-card d-flex justify-center items-center col-span-1 border-2 border-dashed"
                             @click="triggerFileInput"
@@ -508,6 +519,21 @@ export default {
                         </v-icon>
                         </div>
                     </div>
+                    <social-links
+                    class="px-10 ga-5"
+                        title="See on Achievement Social Media"
+                        :socialMediaLinks="
+                        {
+                            facebook: {
+                                iconPath: 'fb.png',
+                                url: getFacebookPostLink(achievementInfo.facebook_post_id)
+                            },
+                            instagram: {
+                                iconPath: 'insta.png',
+                                url: achievementInfo.instagram_link || '#'
+                            }
+                        }"
+                        />
                 </div>
           
                 <!-- Achievement Form -->
