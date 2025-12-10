@@ -149,7 +149,7 @@
                     </img>
                 </div>
 
-                <!-- WHEN AND WHERE -->
+                <!-- WHEN, WHERE AND SOCIAL MEDIA LINKS -->
                 <div class="w-full d-flex flex-col justify-around items-center py-5"> 
                     <div class="w-full d-flex justify-center items-center ga-3">
                         <v-btn class="border" icon>
@@ -194,20 +194,20 @@
                         </v-btn>
                         <div class="custom-card w-full d-flex flex-col justify-center items-center ga-1 elevation-5 py-3 px-5 rounded-md border">
                             <h3 class='text-center text-sm'><i class="text-center text-lg font-extrabold">SOCIAL MEDIA LINKS</i></h3>
-                            <v-sheet class="d-flex flex-row justify-around items-center w-full ga-3">
-                                <v-btn icon>
-                                <v-avatar class="w-full h-full" :image="$store.getters.base + 'insta.png'" size="30"></v-avatar>
-                                </v-btn>
-
-                                <v-btn icon :href="getFacebookPostLink(announcementDetails.facebook_post_id)" target="_blank" rel="noopener noreferrer">
-                                <v-avatar :image="$store.getters.base + 'fb.png'" size="30"></v-avatar>      
-                                </v-btn>
-                        
-
-                                <v-btn icon>
-                                <v-icon>mdi-link-variant</v-icon>
-                                </v-btn>
-                            </v-sheet>
+                            <social-links
+                            :title="null"
+                            :socialMediaLinks="
+                                {
+                                    facebook: {
+                                        iconPath: 'fb.png',
+                                        url: getFacebookPostLink(announcementDetails.facebook_post_id)
+                                    },
+                                    instagram: {
+                                        iconPath: 'insta.png',
+                                        url: announcementDetails.instagram_link || '#'
+                                    }
+                                }"
+                            ></social-links>
                         </div>
                     </div>
                 </div>
@@ -229,12 +229,10 @@ import "swiper/css/pagination";
 import { EffectCoverflow, Autoplay, Pagination } from "swiper/modules";
 
 import $ from 'jquery';
+import SocialLinks from "../landingPageComponents/SocialLinks.vue";
 
 export default {
     name: "Announcements",
-    components : {
-        Navigation,
-    },
     props: {
         barangayId: Number
     },
@@ -252,6 +250,10 @@ export default {
         };
 
     },
+    components: { 
+        SocialLinks 
+    },    
+
     computed: {
         baseUrl() {
             return window.location.origin === 'http://localhost:5173'

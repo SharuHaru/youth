@@ -12,14 +12,17 @@
                     class="center-avatar">
                 </v-avatar>
             </div>
-            <SocialLinks class="d-flex flex-column justify-center items-center gap-3 px-15"></SocialLinks>  
+            <SocialLinks 
+            class="d-flex flex-column justify-center items-center gap-3 px-15"
+            title="Follow us on our Social Media Accounts"
+            :social-media-links="{
+                facebook: {
+                    url: 'https://www.facebook.com/profile.php?id=100078971831746',
+                    iconPath: 'fb.png',
+                },
+            }"></SocialLinks>  
         </div>
 
-
-        <div class="magicpattern top-[-50%] left-[-12%]"/>
-        <div class="magicpattern top-[-50%] right-[-15%]"/>
-        <div class="magicpattern3 bottom-[-25%] left-[0%]"/>
-        <div class="magicpattern2 bottom-[-25%] right-[-5%]"/>
     </div>
 
     <!-- 📽 Video Background -->

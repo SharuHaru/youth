@@ -17,6 +17,9 @@
 
         <!-- Logo and Barangay Name -->
         <v-list-item class="logo-container">
+            <v-divider
+            class="mt-4"
+            v-if="!this.drawer"></v-divider>
             <div class="d-flex justify-center items-center py-5" @click="openBarangayWebsite">
                 <v-avatar size="45">
                     <v-img :src="$store.getters['base'] + 'public/Group.svg'" alt="Barangay Logo"></v-img>
@@ -28,6 +31,9 @@
                     <v-list-item-subtitle>{{ barangaySlug.toUpperCase() }}</v-list-item-subtitle>
                 </v-list-item>
             </div>
+            
+                <v-divider
+                v-if="!this.drawer"></v-divider>
         </v-list-item>
 
         <!-- Navigation Menu (Names and Icons)-->

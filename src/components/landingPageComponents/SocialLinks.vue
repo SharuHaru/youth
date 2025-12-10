@@ -1,22 +1,19 @@
 <template>
-    <v-sheet class="social-links" elevation="10">
-      <div class="text-xs text-grey italic">
-        FOLLOW US IN OUR BARANGAY SOCIALS
+    <v-sheet class="social-links d-flex flex-col justify-center items-center" elevation="10">
+      <div class="text-xs text-grey italic uppercase center">
+        {{ title }}
       </div>  
-      <v-sheet class="d-flex flex-row justify-between items-center w-full ga-5">
-        <v-btn icon href="https://www.facebook.com/profile.php?id=100078971831746" target="_blank" rel="noopener noreferrer" size="40">
-          <v-avatar :image="$store.getters.base + 'fb.png'"></v-avatar>      
-        </v-btn>
-  
-        <v-btn icon size="40">
-          <v-avatar class="w-full h-full" :image="$store.getters.base + 'insta.png'"></v-avatar>
-        </v-btn>
-
-        <v-btn icon size="40">
-          <v-avatar class="w-full h-full" :image="$store.getters.base + 'yt.png'" ></v-avatar>
+      <v-sheet class="d-flex flex-row justify-evenly items-center flex-wrap w-full ga-5">
+        <v-btn 
+        v-for="socialMediaLink in socialMediaLinks"
+        icon 
+        :href="socialMediaLink.url" target="_blank" rel="noopener noreferrer" size="30">
+          <v-avatar 
+          :image="$store.getters.base + socialMediaLink.iconPath"
+          size="30"></v-avatar>      
         </v-btn>
 
-        <v-btn icon size="40">
+        <v-btn icon size="30">
           <v-icon>mdi-link-variant</v-icon>
         </v-btn>
       </v-sheet>
@@ -30,6 +27,26 @@
   
   export default {
     name: 'SocialLinks',
+    props: {
+      title : {
+        type: String,
+        default: 'Social Links',
+      },
+      socialMediaLinks: {
+        type: Object,
+        default: () => ({
+          facebook: {
+            iconPath: 'fb.png',
+          },
+          instagram: {
+            iconPath: 'insta.png',
+          },
+          youtube: {
+            iconPath: 'yt.png',
+          },
+        }),
+      },
+    },
     components: { ThemeSwitcher },
     data() {
       return {}
@@ -48,6 +65,7 @@
     left: 5%; */
 
     /* position: relative; */
+  
 
 
     z-index: 3;
