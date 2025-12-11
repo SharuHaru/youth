@@ -455,6 +455,12 @@ export default {
         this.fetchAvailableMonths();
     },
     watch: {
+        showAnnouncementDetails(newVal) {
+            // When dialog closes (newVal === false)
+            if (!newVal) {
+                this.imagesContainer = false;
+            }
+        },
         barangayId(newVal, oldVal) {
             if (newVal !== oldVal) {
                 this.fetchBarangayAnnouncements();
