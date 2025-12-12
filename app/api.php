@@ -1,4 +1,30 @@
 <?php
+declare(strict_types=1);
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+require_once('../vendor/autoload.php');
+
+
+use Dotenv\Dotenv;
+
+// Default environment file
+$envFile = '.env.development';
+
+// 🔹 Include app configuration (timezone, app name, base URL, etc.)
+require_once __DIR__ . '../config/app.php';
+
+// Load the chosen file
+$dotenv = Dotenv::createImmutable(__DIR__ . '/../', $envFile);
+$dotenv->load();
+
+$GLOBALS['secret_key'] = $_ENV['JWT_SECRET'];
+$GLOBALS['client_secret_google'] = $_ENV['CLIENT_SECRET_GOOGLE'];
+$GLOBALS['client_id_google'] = $_ENV['CLIENT_ID_GOOGLE'];
+$GLOBALS['client_id_facebook'] = $_ENV['CLIENT_ID_FACEBOOK'];
+$GLOBALS['client_secret_facebook'] = $_ENV['CLIENT_SECRET_FACEBOOK'];
+
+
+
 
 // enable error reporting for development
 ini_set('display_errors', 1);           // tells PHP to display runtime errors
@@ -13,6 +39,7 @@ define('__BASE', __DIR__);
 $allowedOrigins = ['http://localhost:5173', 'https://testdeploy.irigayouth.com'];
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
+
 // Handle OPTIONS preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     if (in_array($origin, $allowedOrigins)) {
@@ -20,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     }
     header("Access-Control-Allow-Credentials: true");
     header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token');
+    header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token, Authorization');
     http_response_code(200);
     exit;
 }
@@ -34,7 +61,7 @@ if (in_array($origin, $allowedOrigins)) {
 
 header("Access-Control-Allow-Credentials: true");
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token');
+header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token, Authorization');
 header('Content-Type: application/json');
 
 /** Start Session */
@@ -54,6 +81,21 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
             'message' => 'Invalid CSRF token.'
         ]);
         exit;
+    }
+}
+
+
+function authorizeRequest() {
+    if (!isset($_COOKIE['jwt'])) {
+        returnError("Unauthorized", 401);
+    }
+
+    try {
+        $jwt = $_COOKIE['jwt'];
+        $decoded = JWT::decode($jwt, new Key($GLOBALS['secret_key'],'HS256'));  
+        return $decoded; // return user info (payload)
+    } catch (Exception $e) {
+        returnError("Invalid Token", 401);
     }
 }
 
@@ -115,6 +157,9 @@ else if($endpoint == 'barangay') {
 }
 else if($endpoint == 'education-type') {
     require_once __DIR__ . '/api--educationType.php';
+}
+else if($endpoint == 'auth') {
+    require_once __DIR__ . '/api--auth.php';
 }
 else if($endpoint == 'csrf') {
     require_once __DIR__ . '/csrf.php';

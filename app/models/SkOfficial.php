@@ -1,4 +1,7 @@
 <?php
+declare(strict_types=1);
+use Firebase\JWT\JWT;
+require_once('../vendor/autoload.php');
 
 require_once __DIR__ . '/Model.php';
 
@@ -7,21 +10,16 @@ class SkOfficial extends Model
     /** static data */
     public    static $table                  = 'sk_officials';
     public    static $table_columns          = [];
-    protected static $basic_columns          = ['id', 'full_name', 'username', 'email'];
+    protected static $basic_columns          = ['id', 'full_name', 'email'];
     public    const  POSITION_SK_CHAIRPERSON = "SK Chairperson";
     public    const  POSITION_SK_SECRETARY   = "SK Secretary";
     public    const  POSITION_SK_TREASURER   = "SK Treasurer";
     public    const  POSITION_SK_KAGAWAD     = "SK Kagawad";
-    private   static $session_username_key   = 'kh0vlaf86ytb7hg9';
-    private   static $session_password_key   = 'f06vtd9gx1r41tsg';
-    private   static $logged_in              = null;
-    private   static $logged_out             = false;
+
 
     /** properties */
     protected $barangay_id    = 0;
     protected $slug           = '';
-    protected $username       = '';
-    protected $password       = '';
     protected $full_name      = '';
     protected $position       = '';
     protected $contact_number = '';
@@ -76,26 +74,6 @@ class SkOfficial extends Model
     public function getSlug(){
         return $this->slug;
     }
-
-    /**
-     * Gets SkOfficial username.
-     * @return string
-     */
-    public function getUsername()
-    {
-        return $this->username;
-    }
-
-
-    /**
-     * Gets SkOfficial password.
-     * @return string
-     */
-    public function getPassword()
-    {
-        return $this->password;
-    }
-
 
     /**
      * Gets SkOfficial full_name.
@@ -225,29 +203,6 @@ class SkOfficial extends Model
     {
         $this->slug = $slug;
     }
-
-
-    /**
-     * Sets SkOfficial username.
-     * @param $username
-     * @return void
-     */
-    public function setUsername($username)
-    {
-        $this->username = $username;
-    }
-
-
-    /**
-     * Sets SkOfficial password.
-     * @param $password
-     * @return void
-     */
-    public function setPassword($password)
-    {
-        $this->password = $password;
-    }
-
 
     /**
      * Sets SkOfficial full_name.
@@ -427,8 +382,8 @@ class SkOfficial extends Model
      */
     public function insert(): bool
     {
-        $stmt = $this->getConnection()->prepare("INSERT INTO `" . self::$table . "` (`barangay_id`, `slug`, `username`, `password`, `full_name`, `position`, `contact_number`, `email`, `birthday`, `motto`, `img`, `term_start`, `term_end`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("issssssssssss", $this->barangay_id, $this->slug, $this->username, $this->password, $this->full_name, $this->position, $this->contact_number, $this->email, $this->birthday, $this->motto, $this->img, $this->term_start, $this->term_end);
+        $stmt = $this->getConnection()->prepare("INSERT INTO `" . self::$table . "` (`barangay_id`, `slug`, `full_name`, `position`, `contact_number`, `email`, `birthday`, `motto`, `img`, `term_start`, `term_end`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("issssssssss", $this->barangay_id, $this->slug, $this->full_name, $this->position, $this->contact_number, $this->email, $this->birthday, $this->motto, $this->img, $this->term_start, $this->term_end);
         $stmt->execute();
         if ($stmt->affected_rows > 0) {
             $this->setId($stmt->insert_id);
@@ -446,8 +401,8 @@ class SkOfficial extends Model
      */
     public function update(): bool
     {
-        $stmt = $this->getConnection()->prepare("UPDATE `" . self::$table . "` SET `barangay_id` = ?, `slug` = ?, `username` = ?, `password` = ?, `full_name` = ?, `position` = ?, `contact_number` = ?, `email` = ?, `birthday` = ?, `motto` = ?, `img` = ?, `term_start` = ?, `term_end` = ?, `reset_token` = ?, `token_expires` = ? WHERE `id` = ?");
-        $stmt->bind_param("issssssssssssssi", $this->barangay_id, $this->slug, $this->username, $this->password, $this->full_name, $this->position, $this->contact_number, $this->email, $this->birthday, $this->motto, $this->img, $this->term_start, $this->term_end, $this->reset_token, $this->token_expires, $this->id);
+        $stmt = $this->getConnection()->prepare("UPDATE `" . self::$table . "` SET `barangay_id` = ?, `slug` = ?, `full_name` = ?, `position` = ?, `contact_number` = ?, `email` = ?, `birthday` = ?, `motto` = ?, `img` = ?, `term_start` = ?, `term_end` = ?, `reset_token` = ?, `token_expires` = ? WHERE `id` = ?");
+        $stmt->bind_param("issssssssssssi", $this->barangay_id, $this->slug, $this->full_name, $this->position, $this->contact_number, $this->email, $this->birthday, $this->motto, $this->img, $this->term_start, $this->term_end, $this->reset_token, $this->token_expires, $this->id);
         $stmt->execute();
         return $stmt->affected_rows > 0;
     }
@@ -564,126 +519,11 @@ class SkOfficial extends Model
 
 
 
-    // -------------------- AUTHENTICATION & SESSION MANAGEMENT --------------------
-    /**
-     * Authenticates using the given identifier and password.
-     * @param string $identifier
-     * @param string $password
-     * @param bool $is_password_hashed
-     * @return SkOfficial|null
-     */
-    private static function authenticate(string $identifier, string $password, bool $is_password_hashed = false): ?SkOfficial
-    {
-        $authenticated = null;
-
-        // find the sk_official using the given identifier
-        $column = (filter_var($identifier, FILTER_VALIDATE_EMAIL)) ? 'email' : 'username';
-        $sk_official = SkOfficial::findBy($column, $identifier);
-
-        // if sk_official is found, verify the given password
-        if ($sk_official) {
-            if ((!$is_password_hashed && $sk_official->getPassword() === $password) || ($is_password_hashed && password_verify(base64_encode($sk_official->getPassword()), $password))) {
-                $authenticated = $sk_official;
-            }
-        }
-
-        return $authenticated;
-    }
-    
-    /**
-     * Attempts to log in using the given identifier and password.
-     * @param string $identifier
-     * @param string $password
-     * @param bool $remember
-     * @return SkOfficial
-     * @throws Exception
-     */
-    public static function login(string $identifier, string $password, bool $remember = false): SkOfficial
-    {
-        if (self::getLoggedIn() !== null) {
-            self::logout();
-        }
-        
-        // authenticate
-        $sk_official = self::authenticate($identifier, $password);
-        if ($sk_official === null) {
-            throw new Exception('Invalid credentials');
-        }
-        
-        // encode credentials
-        $encoded_username = base64_encode($sk_official->getUsername());
-        $encoded_password = base64_encode(password_hash(base64_encode($sk_official->getPassword()), PASSWORD_DEFAULT));
-
-        // store encoded credentials in session
-        $_SESSION[self::$session_username_key] = $encoded_username;
-        $_SESSION[self::$session_password_key] = $encoded_password;
-
-        // if remembered, store credentials in cookies as well
-        if ($remember) {
-            $cookie_expiration = time() + (86400 * 15); // n days
-            $cookie_path       = '/';
-            setcookie(self::$session_username_key, $encoded_username, $cookie_expiration, $cookie_path);
-            setcookie(self::$session_password_key, $encoded_password, $cookie_expiration, $cookie_path);
-        }
-
-        self::$logged_in  = $sk_official;
-        self::$logged_out = false;
-
-        return $sk_official;
-    }
-
+    // -------------------- AUTHENTICATION & JWT AUTHORIZATION MANAGEMENT --------------------
     /**
      * Gets logged in SkOfficial.
      * @return SkOfficial|null
      */
-    public static function getLoggedIn(): ?SkOfficial
-    {
-        if (!self::$logged_out && (self::$logged_in === null)) {
-            // get remembered credentials
-            if (!isset($_SESSION[self::$session_username_key]) || !isset($_SESSION[self::$session_password_key])) {
-                if (isset($_COOKIE[self::$session_username_key]) && isset($_COOKIE[self::$session_password_key])) {
-                    $_SESSION[self::$session_username_key] = $_COOKIE[self::$session_username_key];
-                    $_SESSION[self::$session_password_key] = $_COOKIE[self::$session_password_key];
-                }
-            }
-
-            // attempt to get logged in sk_official
-            if (isset($_SESSION[self::$session_username_key]) && isset($_SESSION[self::$session_password_key])) {
-                // decode credentials
-                $decoded_username = base64_decode($_SESSION[self::$session_username_key]);
-                $decoded_password = base64_decode($_SESSION[self::$session_password_key]);
-
-                self::$logged_in  = self::authenticate($decoded_username, $decoded_password, true);
-            }
-        }
-
-        return self::$logged_in;
-    }
-
-    /**
-     * Clears logged in.
-     * @return void
-     */
-    public static function logout(): void
-    {
-        // delete session
-        if (isset($_SESSION[self::$session_username_key])) {
-            unset($_SESSION[self::$session_username_key]);
-        }
-        if (isset($_SESSION[self::$session_password_key])) {
-            unset($_SESSION[self::$session_password_key]);
-        }
-
-        // delete cookies as well
-        $cookie_expiration = time() - 3600;
-        $cookie_path       = '/';
-        setcookie(self::$session_username_key, '', $cookie_expiration, $cookie_path);
-        setcookie(self::$session_password_key, '', $cookie_expiration, $cookie_path);
-
-        // clear cache
-        self::$logged_in  = null;
-        self::$logged_out = true;
-    }
 
     /**
      * Test email sending

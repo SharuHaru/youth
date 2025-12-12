@@ -138,6 +138,7 @@ export default {
                 { menuName: "Announcements", icon: "mdi-bullhorn", to: `/admin/${this.barangaySlug}/announcements`},
                 { menuName: "Achievements", icon: "mdi-trophy", to: `/admin/${this.barangaySlug}/achievements`},
                 { menuName: "Settings and Profile", icon: "mdi-cog", to: `/admin/${this.barangaySlug}/settings` },
+                { menuName: "Notices", icon: "mdi-information", to: `/admin/${this.barangaySlug}/notices` },
             ];
         },
         barangayName() {
@@ -152,12 +153,9 @@ export default {
             const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
             $.ajax({
                 type: 'POST', xhrFields: { withCredentials: true },
-                url: `${this.$store.getters['api_base']}?e=sk-official&a=logout`,
+                url: `${this.$store.getters['api_base']}?e=auth&a=logout`,
                 headers: {
                     'X-CSRF-Token': csrfToken
-                },
-                data: {
-                    username: this.$store.getters['auth/getUser'].sk_official.username
                 },
                 success: () => {
                     this.$store.commit('auth/setUser', null);

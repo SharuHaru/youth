@@ -5,16 +5,19 @@
 |-----------------------------------------------------------------------
 */
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
 $smtp_config = [
-    'host'     => 'localhost',
-    'auth'     => false,
-    'username' => 'youth@localhost.net',
-    'password' => '123456',
-    'secure'   => '',
-    'port'     => 25,
+    'host'     => 'smtp.gmail.com',
+    'auth'     => true,
+    'username' => 'chatgpt4youth@gmail.com',
+    'password' => 'zzaq xzfz clrs cuav', // Hide this in Deployment
+    'secure'   => PHPMailer::ENCRYPTION_STARTTLS,
+    'port'     => 587,
     'debug'    => 0,
     'from'     => [
-        'email' => 'youth@localhost.net',
+        'email' => 'chatgpt4youth@gmail.com',
         'name'  => 'Youth'
     ],
     'options'  => [

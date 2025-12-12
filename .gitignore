@@ -14,6 +14,10 @@ dist-ssr
 coverage
 *.local
 
+/node_modules/
+/vendor/
+.env
+env.development
 /cypress/videos/
 /cypress/screenshots/
 
