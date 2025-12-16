@@ -19,14 +19,15 @@
             :style="barangay.img ? {
                 'background-image': `url(${this.$store.getters.base}public/barangayHall/${barangay.img.toLowerCase()}?v=1)`,
                 'background-size': 'cover',
-                'background-position': 'center'
+                'background-position': 'center',
+                
             } : {                
                 'background-image': `url(${this.$store.getters.base}public/barangayHall/no-avatar.svg?v=1)`,
                 'background-size': 'contain',
                 'background-position': 'center'}"
             @click = "toBarangay(barangay)"
         >
-            <v-card-title class="overlay-titles-barangays" style="font-weight: 900; font-size: 1rem; opacity: 1;">
+            <v-card-title class="overlay-titles-barangays" style="font-weight: 900; font-size: 1rem; opacity: 1; color: whitesmoke;">
                 {{ barangay.name.toUpperCase() }}
             </v-card-title>
         </v-card>
