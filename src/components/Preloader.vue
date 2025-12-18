@@ -1,5 +1,8 @@
 <template>
-    <div v-if="isLoading" class="mil-preloader">
+    <div v-if="isLoading" 
+    class="mil-preloader"
+    :style="isDark ? {'background-image': 'linear-gradient(45deg, #363636, #0e0e0e, #363636, #0e0e0e)'} : {}"
+    :class="['mil-preloader', {'dark-gradient': isDark}]">
         <div class="mil-preloader-animation">
             <div class="mil-pos-abs mil-animation-2">
                 <div class="mil-reveal-frame">
@@ -12,12 +15,17 @@
 
 <script>
 import gsap from "gsap";
+import { useTheme } from 'vuetify';
 
 export default {
     data() {
         return {
             isLoading: true,
         };
+    },
+    setup() {
+        const theme = useTheme();
+        return { theme };
     },
     mounted() {
         const tl = gsap.timeline({
@@ -52,6 +60,11 @@ export default {
             "-=0.3"
         );
     },
+    computed: {
+        isDark() {
+            return this.theme.current.value.dark;
+        }
+    },
 };
 </script>
 
@@ -69,9 +82,8 @@ $light: #fff;
     left: 0;
     width: 100%;
     height: 100vh;
-    background-color: $dark;
+    background-color: $light;
     overflow: hidden;
-    background-image: linear-gradient(45deg, #363636, #0e0e0e, #363636, #0e0e0e);
     background-position: center;
     background-attachment: fixed;
 
