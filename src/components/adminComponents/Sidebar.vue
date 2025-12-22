@@ -5,7 +5,8 @@
     :permanent="true"
     :disable-resize-watcher="true"
     :mobile-breakpoint="0"
-    class="relative d-flex flex-col items-center pa-3 pt- pb-7">
+    class="relative d-flex flex-col items-center pa-3 pb-7 border elevation-10 rounded-2xl ma-2"
+    :style="this.drawer ? {'height' : '98vh'} : {'border-radius' : '1rem', 'margin' : '16px', 'height' : '98vh'}"
 
         <!-- Toggle Button Fixed at the Top Right -->
         <v-btn
@@ -40,14 +41,15 @@
         <v-list 
         v-if="drawer"
         density="compact" 
+        class="d-flex flex-col ga-3 w-full pa-0"
         nav>
             <v-list-item
                 v-for="menuObj in menuObjs"
                 :key="menuObj.menuName"
                 :to="menuObj.to"
+                class="pa-3"
                 :class="{ active: isActive(menuObj.to) }"
                 density="compact"
-                class="mb-6"
                 @click="navigate(menuObj.to)"
             >
                 <template v-slot:prepend class="">
@@ -110,7 +112,7 @@
         v-if="!drawer"
         class="absolute bottom-0 d-flex flex-col items-center justify-center gap-5 my-5">
             <ThemeSwitcher/>
-                <v-btn class="d-flex justify-center pa-0 items-center" color="error" variant="outlined" @click="logout">
+            <v-btn class="d-flex justify-center items-center" color="error" variant="outlined" @click="logout">
                 <v-icon>mdi-logout</v-icon>
             </v-btn>
         </div>
