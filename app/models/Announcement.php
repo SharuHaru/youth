@@ -908,12 +908,13 @@ class Announcement extends Model
 
         // Query: join announcement_datetime to announcement
         $query = "
-            SELECT a.* 
+            SELECT DISTINCT a.*
             FROM `" . Announcement::$table . "` a
             INNER JOIN `" . AnnouncementDatetime::$table . "` ad
                 ON a.id = ad.announcement_id
             WHERE ad.date LIKE ?
         ";
+
 
         $params = ["$yearMonth%"];
         $types = "s";
