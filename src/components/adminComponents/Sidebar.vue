@@ -5,8 +5,9 @@
     :permanent="true"
     :disable-resize-watcher="true"
     :mobile-breakpoint="0"
-    class="relative d-flex flex-col items-center pa-3 pb-7 border elevation-10 rounded-2xl ma-2"
-    :style="this.drawer ? {'height' : '98vh'} : {'border-radius' : '1rem', 'margin' : '16px', 'height' : '98vh'}"
+    class="relative d-flex flex-col items-center pa-3 pb-7 border elevation-10 rounded-2xl ma-3"
+    :class="this.drawer ? '' : 'dark-gradient'"
+    :style="this.drawer ? {'height' : '98vh'} : {'border-radius' : '1rem', 'height' : '98vh'}"
 
         <!-- Toggle Button Fixed at the Top Right -->
         <v-btn
@@ -164,7 +165,12 @@ export default {
 
     mounted() {
         window.addEventListener("resize", this.updateWidth);
-        this.updateWidth(); // run once on load
+        this.updateWidth();
+
+        const savedDrawer = localStorage.getItem('admin_sidebar_open');
+        if (savedDrawer !== null && this.windowWidth >= 960) {
+            this.drawer = JSON.parse(savedDrawer);
+        }
     },
 
 
@@ -176,15 +182,14 @@ export default {
         updateWidth() {
             this.windowWidth = window.innerWidth;
 
-            // force drawer closed on mobile
             if (this.windowWidth < 960) {
                 this.drawer = false;
             }
         },
-
         toggleDrawer() {
             if (this.windowWidth >= 960) {
                 this.drawer = !this.drawer;
+                localStorage.setItem('admin_sidebar_open', JSON.stringify(this.drawer));
             }
         },
 
@@ -241,5 +246,16 @@ export default {
     top: 0;
     right: 0;
     z-index: 2000;
+}
+
+.dark-gradient {
+  background-image: linear-gradient(
+    45deg,
+    #363636,
+    #0e0e0e,
+    #363636,
+    #0e0e0e
+  );
+  background-size: 100% 100%;
 }
 </style>
