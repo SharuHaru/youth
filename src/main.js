@@ -27,6 +27,8 @@ const vuetify = createVuetify({
 
 const app = createApp(App)
 
+const DRAWER_KEY = 'admin_sidebar_open';
+
 // set axios base URL to a relative path
 axios.defaults.baseURL = '/app'
 
