@@ -6,7 +6,7 @@
     :disable-resize-watcher="true"
     :mobile-breakpoint="0"
     class="relative d-flex flex-col items-center pa-3 pb-7 border elevation-10 rounded-2xl ma-3"
-    :class="this.drawer ? '' : 'dark-gradient'"
+    :class="!isDarkMode  ? '' : 'dark-gradient'"
     :style="this.drawer ? {'height' : '98vh'} : {'border-radius' : '1rem', 'height' : '98vh'}"
 
         <!-- Toggle Button Fixed at the Top Right -->
@@ -124,6 +124,8 @@
 import ThemeSwitcher from '../ThemeSwitcher.vue';
 import $ from 'jquery';
 
+import { useTheme } from 'vuetify';
+
 export default {
     components: { ThemeSwitcher },
 
@@ -133,8 +135,16 @@ export default {
             windowWidth: window.innerWidth // track screen width
         };
     },
+    setup() {
+        const theme = useTheme();
+        return { theme };
+    },
 
     computed: {
+        isDarkMode() {
+            return this.theme.current.value.dark;
+        },
+
         barangaySlug() {
             const user = this.$store.getters['auth/getUser'];
             return user && user.barangay ? user.barangay.slug : 'default-slug';
@@ -151,14 +161,10 @@ export default {
             ];
         },
 
-        // 🚀 Responsive Drawer Width
         drawerWidth() {
-            // MOBILE logic — always collapsed
             if (this.windowWidth < 960) {
                 return 100;
             }
-
-            // DESKTOP logic — allow expanding/collapsing
             return this.drawer ? 280 : 100;
         }
     },
